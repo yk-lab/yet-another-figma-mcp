@@ -1,0 +1,140 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  # General fixes and checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      # Python AST チェック
+      - id: check-ast
+      # 大文字小文字の競合チェック
+      - id: check-case-conflict
+      # 実行可能ファイルのシバンチェック
+      - id: check-executables-have-shebangs
+      # JSON バリデーション
+      - id: check-json
+        exclude: ^(\.vscode/.*\.json)$
+      # シバン付きファイルの実行可能チェック
+      - id: check-shebang-scripts-are-executable
+      # マージコンフリクトチェック
+      - id: check-merge-conflict
+      # YAML バリデーション
+      - id: check-yaml
+      # TOML バリデーション
+      - id: check-toml
+      # 大きなファイルチェック
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      # プライベートキー検出
+      - id: detect-private-key
+      # ファイル末尾の改行
+      - id: end-of-file-fixer
+      # 混合改行コードチェック
+      - id: mixed-line-ending
+        args: [--fix=no]
+      # テストファイル命名規則
+      - id: name-tests-test
+      # 保護ブランチへのコミット防止
+      - id: no-commit-to-branch
+        args: [--branch, main]
+      # 末尾の空白削除
+      - id: trailing-whitespace
+      # デバッグ文検出
+      - id: debug-statements
+        language_version: python3.13
+      # BOM 除去
+      - id: fix-byte-order-marker
+      # git submodule の誤追加防止
+      - id: forbid-submodules
+  # Python コードフォーマット & リント (Ruff)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.6
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+  # Python 型チェック (mypy)
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.18.2
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - httpx
+          - click
+          - pydantic
+          - mcp
+          - pytest
+  # Python セキュリティチェック (Bandit)
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.9.2
+    hooks:
+      - id: bandit
+        args: ['-c', 'pyproject.toml']
+        additional_dependencies: ['bandit[toml]']
+        exclude: '^(tests)/'
+  # Python アップグレードチェック
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.21.2
+    hooks:
+      - id: pyupgrade
+        args: [--py313-plus]
+  # YAML フォーマット & リント
+  - repo: https://github.com/google/yamlfmt
+    rev: v0.20.0
+    hooks:
+      - id: yamlfmt
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.37.1
+    hooks:
+      - id: yamllint
+        args: [-c=.yamllint]
+  # シェルスクリプトチェック
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+  # スペルチェック
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.40.0
+    hooks:
+      - id: typos
+  # JSON5 チェック
+  - repo: https://gitlab.com/bmares/check-json5
+    rev: v1.0.0
+    hooks:
+      - id: check-json5
+        files: (\.json(5|c)|\.vscode/.*\.json)$
+  # コミットメッセージリント
+  - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
+    rev: v9.23.0
+    hooks:
+      - id: commitlint
+        stages: [commit-msg]
+        additional_dependencies: ["@commitlint/config-conventional"]
+  # セキュリティ脆弱性チェック
+  - repo: https://github.com/pypa/pip-audit
+    rev: v2.9.0
+    hooks:
+      - id: pip-audit
+  # Markdown フォーマット & リント
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 1.0.0
+    hooks:
+      - id: mdformat
+        additional_dependencies:
+          - mdformat-gfm
+        files: '\.md$'
+  # GitHub Actions ワークフローチェック
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.9
+    hooks:
+      - id: actionlint
+  # PNG 画像最適化
+  - repo: https://github.com/oxipng/oxipng
+    rev: v9.1.5
+    hooks:
+      - id: oxipng
+        args: ["-o", "4", "--strip", "safe", "--alpha"]
+# 設定
+default_language_version:
+  python: python3.13
