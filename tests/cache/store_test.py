@@ -1,7 +1,6 @@
 """cache/store モジュールのテスト"""
 
 import json
-import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -55,34 +54,35 @@ def sample_figma_file() -> dict[str, Any]:
 
 
 class TestCacheStore:
-    def test_cache_store_loads_from_disk(self, sample_figma_file: dict[str, Any]) -> None:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            cache_dir = Path(tmpdir)
-            file_id = "test123"
-            file_dir = cache_dir / file_id
-            file_dir.mkdir(parents=True)
+    def test_cache_store_loads_from_disk(
+        self, tmp_path: Path, sample_figma_file: dict[str, Any]
+    ) -> None:
+        """ディスクからキャッシュを読み込めることを確認"""
+        file_id = "test123"
+        file_dir = tmp_path / file_id
+        file_dir.mkdir(parents=True)
 
-            # ファイルを保存
-            with open(file_dir / "file_raw.json", "w") as f:
-                json.dump(sample_figma_file, f)
+        # ファイルを保存
+        with open(file_dir / "file_raw.json", "w") as f:
+            json.dump(sample_figma_file, f)
 
-            index = build_index(sample_figma_file)
-            with open(file_dir / "nodes_index.json", "w") as f:
-                json.dump(index, f)
+        index = build_index(sample_figma_file)
+        with open(file_dir / "nodes_index.json", "w") as f:
+            json.dump(index, f)
 
-            # ストアからロード
-            store = CacheStore(cache_dir)
-            loaded_file = store.get_file(file_id)
-            assert loaded_file is not None
-            assert loaded_file["name"] == "Test Design"
+        # ストアからロード
+        store = CacheStore(tmp_path)
+        loaded_file = store.get_file(file_id)
+        assert loaded_file is not None
+        assert loaded_file["name"] == "Test Design"
 
-            loaded_index = store.get_index(file_id)
-            assert loaded_index is not None
-            assert "by_id" in loaded_index
+        loaded_index = store.get_index(file_id)
+        assert loaded_index is not None
+        assert "by_id" in loaded_index
 
 
 class TestFileIdValidation:
-    """file_id のバリデーションテスト（パストラバーサル攻撃対策）"""
+    """file_id のバリデーションテスト (パストラバーサル攻撃対策)"""
 
     def test_valid_file_id_alphanumeric(self) -> None:
         """英数字のみの file_id は有効"""

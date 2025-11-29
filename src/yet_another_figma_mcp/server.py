@@ -44,6 +44,7 @@ def create_server() -> Server:
 
     @server.list_tools()
     async def list_tools() -> list[Tool]:
+        """利用可能な MCP ツール一覧を返す"""
         return [
             Tool(
                 name="get_cached_figma_file",
@@ -161,6 +162,7 @@ def create_server() -> Server:
 
     @server.call_tool()
     async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
+        """MCP ツールを呼び出す"""
         store = get_store()
         result: dict[str, Any] | list[dict[str, Any]]
 

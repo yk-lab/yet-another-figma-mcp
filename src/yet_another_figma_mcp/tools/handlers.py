@@ -74,6 +74,7 @@ def get_cached_figma_node(store: CacheStore, file_id: str, node_id: str) -> dict
         }
 
     def find_node(node: dict[str, Any], target_id: str) -> dict[str, Any] | None:
+        """ノードツリーから指定 ID のノードを再帰的に検索"""
         if node.get("id") == target_id:
             return node
         for child in node.get("children", []):
