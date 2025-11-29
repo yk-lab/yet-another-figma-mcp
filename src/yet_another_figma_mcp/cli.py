@@ -5,6 +5,7 @@ import json
 import logging
 import signal
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated
 
@@ -68,6 +69,22 @@ def _save_file_raw(file_data: dict[str, object], file_id: str, cache_dir: Path) 
     return file_path
 
 
+def _save_cache_metadata(file_id: str, cache_dir: Path) -> None:
+    """キャッシュのメタデータ（タイムスタンプ等）を保存"""
+    file_dir = cache_dir / file_id
+    file_dir.mkdir(parents=True, exist_ok=True)
+    meta_path = file_dir / "cache_meta.json"
+
+    now = datetime.now(timezone.utc)
+    metadata: dict[str, object] = {
+        "cached_at": now.isoformat(),
+        "cached_at_unix": now.timestamp(),
+    }
+
+    with open(meta_path, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, ensure_ascii=False, indent=2)
+
+
 def _cache_single_file(
     client: FigmaClient,
     file_id: str,
@@ -128,6 +145,9 @@ def _cache_single_file(
         progress.update(task, description=f"{file_id}: インデックスを生成中...")
         index = build_index(file_data)
         save_index(index, cache_dir, file_id)
+
+        # キャッシュメタデータ保存（タイムスタンプ記録）
+        _save_cache_metadata(file_id, cache_dir)
 
     file_name = file_data.get("name", "Unknown")
     console.print(f"[green]✓[/green] {file_id}: {file_name}")
@@ -198,9 +218,12 @@ def cache(
     # FigmaClient でファイル取得
     success_count = 0
     fail_count = 0
+    total_count = len(file_ids)
 
     with FigmaClient() as client:
-        for fid in file_ids:
+        for idx, fid in enumerate(file_ids, start=1):
+            # 進捗表示
+            console.print(f"[dim]({idx}/{total_count})[/dim] ", end="")
             if _cache_single_file(client, fid, target_cache_dir, refresh):
                 success_count += 1
             else:

@@ -131,6 +131,58 @@ class TestCacheCommandSuccess:
         assert (tmp_path / "file1" / "file_raw.json").exists()
         assert (tmp_path / "file2" / "file_raw.json").exists()
 
+    def test_cache_shows_progress(
+        self, tmp_path: Path, mock_figma_response: dict[str, Any]
+    ) -> None:
+        """複数ファイルキャッシュ時に進捗表示される"""
+        with patch("yet_another_figma_mcp.cli.FigmaClient") as mock_client_class:
+            mock_client = MagicMock()
+            mock_client.get_file.return_value = mock_figma_response
+            mock_client.__enter__ = MagicMock(return_value=mock_client)
+            mock_client.__exit__ = MagicMock(return_value=False)
+            mock_client_class.return_value = mock_client
+
+            result = runner.invoke(
+                app,
+                ["cache", "-f", "file1", "-f", "file2", "-f", "file3", "-d", str(tmp_path)],
+            )
+
+        assert result.exit_code == 0
+        # 進捗表示 (n/m) が出力される
+        assert "(1/3)" in result.stdout
+        assert "(2/3)" in result.stdout
+        assert "(3/3)" in result.stdout
+
+    def test_cache_saves_metadata_with_timestamp(
+        self, tmp_path: Path, mock_figma_response: dict[str, Any]
+    ) -> None:
+        """キャッシュ時にタイムスタンプを含むメタデータが保存される"""
+        with patch("yet_another_figma_mcp.cli.FigmaClient") as mock_client_class:
+            mock_client = MagicMock()
+            mock_client.get_file.return_value = mock_figma_response
+            mock_client.__enter__ = MagicMock(return_value=mock_client)
+            mock_client.__exit__ = MagicMock(return_value=False)
+            mock_client_class.return_value = mock_client
+
+            result = runner.invoke(app, ["cache", "-f", "abc123", "-d", str(tmp_path)])
+
+        assert result.exit_code == 0
+
+        # メタデータファイルが保存されていることを確認
+        meta_path = tmp_path / "abc123" / "cache_meta.json"
+        assert meta_path.exists()
+
+        with open(meta_path) as f:
+            meta = json.load(f)
+
+        # タイムスタンプが記録されていることを確認
+        assert "cached_at" in meta
+        assert "cached_at_unix" in meta
+        # ISO 形式のタイムスタンプ
+        assert "T" in meta["cached_at"]
+        # Unix タイムスタンプ
+        assert isinstance(meta["cached_at_unix"], float)
+
     def test_cache_from_file_list(
         self, tmp_path: Path, mock_figma_response: dict[str, Any]
     ) -> None:
