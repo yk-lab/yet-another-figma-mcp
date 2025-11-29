@@ -70,7 +70,7 @@ def _save_file_raw(file_data: dict[str, object], file_id: str, cache_dir: Path) 
 
 
 def _save_cache_metadata(file_id: str, cache_dir: Path) -> None:
-    """キャッシュのメタデータ（タイムスタンプ等）を保存"""
+    """キャッシュのメタデータ (タイムスタンプ等) を保存"""
     file_dir = cache_dir / file_id
     file_dir.mkdir(parents=True, exist_ok=True)
     meta_path = file_dir / "cache_meta.json"
@@ -146,7 +146,7 @@ def _cache_single_file(
         index = build_index(file_data)
         save_index(index, cache_dir, file_id)
 
-        # キャッシュメタデータ保存（タイムスタンプ記録）
+        # キャッシュメタデータ保存 (タイムスタンプ記録)
         _save_cache_metadata(file_id, cache_dir)
 
     file_name = file_data.get("name", "Unknown")
@@ -256,7 +256,7 @@ def serve(
     target_cache_dir = cache_dir or DEFAULT_CACHE_DIR
     set_cache_dir(target_cache_dir)
 
-    # stderr にログ出力を設定（MCP は stdout を使用するため）
+    # stderr にログ出力を設定 (MCP は stdout を使用するため)
     log_level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
         level=log_level,
@@ -268,7 +268,7 @@ def serve(
     logger.info("MCP サーバーを起動中...")
     logger.info("キャッシュディレクトリ: %s", target_cache_dir)
 
-    # SIGTERM ハンドラを設定（SIGINT は KeyboardInterrupt で処理）
+    # SIGTERM ハンドラを設定 (SIGINT は KeyboardInterrupt で処理)
     def sigterm_handler(signum: int, frame: object) -> None:
         logger.info("SIGTERM を受信しました")
         sys.exit(0)
