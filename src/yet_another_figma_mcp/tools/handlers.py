@@ -2,7 +2,16 @@
 
 from typing import Any, Literal
 
-from yet_another_figma_mcp.cache import CacheStore
+from yet_another_figma_mcp.cache import CacheStore, InvalidFileIdError, validate_file_id
+
+
+def _handle_invalid_file_id(file_id: str) -> dict[str, Any]:
+    """無効な file_id のエラーレスポンスを生成"""
+    return {
+        "error": "invalid_file_id",
+        "message": f"無効なファイル ID: '{file_id}'",
+        "file_id": file_id,
+    }
 
 
 def get_cached_figma_file(store: CacheStore, file_id: str) -> dict[str, Any]:
@@ -15,6 +24,11 @@ def get_cached_figma_file(store: CacheStore, file_id: str) -> dict[str, Any]:
     Returns:
         ファイルメタデータとフレーム一覧。エラー時は error フィールドを含む
     """
+    try:
+        validate_file_id(file_id)
+    except InvalidFileIdError:
+        return _handle_invalid_file_id(file_id)
+
     index = store.get_index(file_id)
     if not index:
         return {
@@ -65,6 +79,11 @@ def get_cached_figma_node(store: CacheStore, file_id: str, node_id: str) -> dict
     Returns:
         ノードの詳細情報。エラー時は error フィールドを含む
     """
+    try:
+        validate_file_id(file_id)
+    except InvalidFileIdError:
+        return _handle_invalid_file_id(file_id)
+
     file_data = store.get_file(file_id)
     if not file_data:
         return {
@@ -118,6 +137,11 @@ def search_figma_nodes_by_name(
     Returns:
         マッチしたノードのリスト
     """
+    try:
+        validate_file_id(file_id)
+    except InvalidFileIdError:
+        return []
+
     index = store.get_index(file_id)
     if not index:
         return []
@@ -176,6 +200,11 @@ def search_figma_frames_by_title(
     Returns:
         マッチしたフレームノードのリスト
     """
+    try:
+        validate_file_id(file_id)
+    except InvalidFileIdError:
+        return []
+
     index = store.get_index(file_id)
     if not index:
         return []
@@ -215,6 +244,11 @@ def search_figma_frames_by_title(
 
 def list_figma_frames(store: CacheStore, file_id: str) -> list[dict[str, Any]]:
     """ファイル直下の主要フレーム一覧を取得"""
+    try:
+        validate_file_id(file_id)
+    except InvalidFileIdError:
+        return []
+
     index = store.get_index(file_id)
     if not index:
         return []
