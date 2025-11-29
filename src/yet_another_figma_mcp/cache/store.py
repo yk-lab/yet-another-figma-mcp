@@ -16,7 +16,7 @@ class InvalidFileIdError(ValueError):
 _VALID_FILE_ID_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
 
 
-def _validate_file_id(file_id: str) -> None:
+def validate_file_id(file_id: str) -> None:
     """file_id を検証し、パストラバーサル攻撃を防止する
 
     Args:
@@ -45,14 +45,14 @@ class CacheStore:
 
     def get_file(self, file_id: str) -> dict[str, Any] | None:
         """ファイルの生 JSON を取得"""
-        _validate_file_id(file_id)
+        validate_file_id(file_id)
         if file_id not in self.files:
             self._load_file(file_id)
         return self.files.get(file_id)
 
     def get_index(self, file_id: str) -> dict[str, Any] | None:
         """ファイルのノードインデックスを取得"""
-        _validate_file_id(file_id)
+        validate_file_id(file_id)
         if file_id not in self.indexes:
             self._load_index(file_id)
         return self.indexes.get(file_id)

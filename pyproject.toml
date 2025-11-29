@@ -46,6 +46,10 @@ target-version = "py313"
 line-length = 100
 
 [tool.ruff.lint]
+ignore = [
+    "RUF002",  # Allow fullwidth characters in Japanese docstrings
+    "TRY003",  # Allow long exception messages in custom exceptions
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["yet_another_figma_mcp"]
