@@ -16,7 +16,7 @@ def get_cached_figma_file(store: CacheStore, file_id: str) -> dict[str, Any] | N
         return None
 
     # ルートノードと主要フレーム一覧を返す
-    frames = []
+    frames: list[dict[str, Any]] = []
     for node_id, node_info in index.get("by_id", {}).items():
         if node_info.get("type") == "FRAME":
             # 浅い階層のフレームのみ（ページ直下など）

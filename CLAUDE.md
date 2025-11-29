@@ -18,7 +18,7 @@ uv run pytest tests/cache_test.py
 uv run pytest tests/cache_test.py::TestCacheStore::test_cache_store_loads_from_disk
 
 # Type checking
-uv run mypy src/ tests/
+uv run pyright
 
 # Lint and format
 uv run ruff check --fix .
@@ -60,7 +60,7 @@ Figma MCP サーバーで、Figma 無料プランの API 制限（月 6 回）�
 ## Project-Specific Patterns
 
 - **Test naming**: `*_test.py` 形式（`test_*.py` ではない）
-- **MCP decorators**: `# type: ignore[misc, no-untyped-call, untyped-decorator]` が必要
+- **Type checker**: pyright（MCP SDK と同じ）を使用。type ignore 不要
 - **file_id validation**: 全ての `file_id` は `_validate_file_id()` を通す（正規表現 `^[a-zA-Z0-9_-]+$`）
 - **tmp_path fixture**: テストで一時ファイルを使う場合は `tmp_path` を使用（自動クリーンアップ）
 
@@ -90,7 +90,6 @@ security: セキュリティ修正
 ## Dependencies
 
 - **httpx**: HTTP クライアント（Figma API 呼び出し）
-- **mcp**: MCP サーバー SDK（デコレータの型が不完全なため type ignore が必要）
-- **click**: CLI フレームワーク
+- **mcp[cli,rich]**: MCP サーバー SDK + Typer/Rich CLI
 - **pydantic**: データバリデーション
 - **hatch-vcs**: Git タグベースのバージョニング（ビルド時）

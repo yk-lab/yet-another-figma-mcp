@@ -51,7 +51,7 @@ uv run ruff format .
 ### 型チェック
 
 ```bash
-uv run mypy src/yet_another_figma_mcp
+uv run pyright
 ```
 
 ### テスト
@@ -75,7 +75,7 @@ uv run pre-commit run --all-files
 ```bash
 uv run ruff check .
 uv run ruff format .
-uv run mypy src/yet_another_figma_mcp
+uv run pyright
 uv run pytest
 ```
 
