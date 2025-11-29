@@ -162,12 +162,19 @@ def cache(
         file_ids.extend(file_id)
 
     if file_id_list:
-        with open(file_id_list, encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                # 空行とコメント行をスキップ
-                if line and not line.startswith("#"):
-                    file_ids.append(line)
+        try:
+            with open(file_id_list, encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    # 空行とコメント行をスキップ
+                    if line and not line.startswith("#"):
+                        file_ids.append(line)
+        except UnicodeDecodeError:
+            console.print(
+                "[red]エラー: ファイルリストの読み込みに失敗しました"
+                "（UTF-8 でエンコードしてください）[/red]"
+            )
+            raise typer.Exit(1)
 
     if not file_ids:
         console.print("[red]エラー: ファイル ID を指定してください[/red]")

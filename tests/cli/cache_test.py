@@ -62,7 +62,18 @@ class TestCacheCommandValidation:
         """無効なファイル ID でエラー"""
         with patch("yet_another_figma_mcp.cli.FigmaClient"):
             result = runner.invoke(app, ["cache", "-f", "../invalid", "-d", str(tmp_path)])
+        assert result.exit_code == 1
         assert "無効なファイル ID" in result.stdout
+
+    def test_non_utf8_file_list_shows_error(self, tmp_path: Path) -> None:
+        """UTF-8 以外のエンコーディングでエラー"""
+        file_list = tmp_path / "files.txt"
+        # Shift_JIS でエンコードされたファイル（日本語を含む）
+        file_list.write_bytes("ファイルID\n".encode("shift_jis"))
+
+        result = runner.invoke(app, ["cache", "-l", str(file_list), "-d", str(tmp_path)])
+        assert result.exit_code == 1
+        assert "UTF-8" in result.stdout
 
 
 class TestCacheCommandSuccess:
@@ -142,9 +153,7 @@ class TestCacheCommandSuccess:
         assert (tmp_path / "file2" / "file_raw.json").exists()
         assert (tmp_path / "file3" / "file_raw.json").exists()
 
-    def test_skip_cached_file_without_refresh(
-        self, tmp_path: Path, mock_figma_response: dict[str, Any]
-    ) -> None:
+    def test_skip_cached_file_without_refresh(self, tmp_path: Path) -> None:
         """refresh なしでキャッシュ済みファイルをスキップ"""
         # 既存キャッシュを作成
         cache_dir = tmp_path / "abc123"
