@@ -32,7 +32,7 @@ def create_server() -> Server:
     """MCP サーバーを作成"""
     server = Server("yet-another-figma-mcp")
 
-    @server.list_tools()  # type: ignore[misc, no-untyped-call, untyped-decorator]
+    @server.list_tools()
     async def list_tools() -> list[Tool]:
         return [
             Tool(
@@ -139,7 +139,7 @@ def create_server() -> Server:
             ),
         ]
 
-    @server.call_tool()  # type: ignore[misc, untyped-decorator]
+    @server.call_tool()
     async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
         store = get_store()
         result: dict[str, Any] | list[dict[str, Any]] | None

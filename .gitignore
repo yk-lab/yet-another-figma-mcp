@@ -40,7 +40,7 @@ htmlcov/
 .nox/
 
 # Type checking
-.mypy_cache/
+.pyright/
 
 # Build
 *.manifest
@@ -50,8 +50,7 @@ htmlcov/
 pip-log.txt
 pip-delete-this-directory.txt
 
-# uv
-uv.lock
+# uv (lock file is committed for reproducible builds)
 
 # Local cache
 .yet_another_figma_mcp/
