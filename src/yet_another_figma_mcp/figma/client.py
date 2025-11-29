@@ -8,6 +8,7 @@ from typing import Any
 
 import httpx
 
+from yet_another_figma_mcp.cache import validate_file_id
 from yet_another_figma_mcp.figma.exceptions import (
     FigmaAPIError,
     FigmaAuthenticationError,
@@ -133,7 +134,7 @@ class FigmaClient:
         try:
             error_detail = response.json()
             message = error_detail.get("err", str(error_detail))
-        except Exception:
+        except (ValueError, KeyError):
             message = response.text or f"HTTP {status_code}"
 
         raise FigmaAPIError(message, status_code=status_code)
@@ -234,12 +235,14 @@ class FigmaClient:
             ファイルデータ（ドキュメント構造含む）
 
         Raises:
+            InvalidFileIdError: file_id が無効な形式の場合
             FigmaAuthenticationError: 認証エラー
             FigmaFileNotFoundError: ファイルが存在しない
             FigmaRateLimitError: レート制限
             FigmaServerError: サーバーエラー
             FigmaAPIError: その他の API エラー
         """
+        validate_file_id(file_id)
         response = self._request_with_retry("GET", f"/files/{file_id}", file_id=file_id)
         result: dict[str, Any] = response.json()
         return result

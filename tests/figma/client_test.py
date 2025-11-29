@@ -1,12 +1,14 @@
 """Figma API クライアントのテスト"""
 
 # pyright: reportPrivateUsage=false
+# ruff: noqa: S105, S106  # Test tokens are not real secrets
 
 from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
 
+from yet_another_figma_mcp.cache import InvalidFileIdError
 from yet_another_figma_mcp.figma import (
     FigmaAPIError,
     FigmaAuthenticationError,
@@ -194,6 +196,21 @@ class TestFigmaClientGetFile:
             assert result["name"] == "Test File"
             mock_request.assert_called_once_with("GET", "/files/file123", file_id="file123")
             client.close()
+
+    def test_get_file_validates_file_id(self) -> None:
+        """file_id のバリデーション"""
+        client = FigmaClient(token="test-token")
+
+        with pytest.raises(InvalidFileIdError):
+            client.get_file("")
+
+        with pytest.raises(InvalidFileIdError):
+            client.get_file("../etc/passwd")
+
+        with pytest.raises(InvalidFileIdError):
+            client.get_file("file/with/slash")
+
+        client.close()
 
 
 class TestFigmaClientRetry:

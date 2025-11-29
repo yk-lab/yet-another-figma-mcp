@@ -9,7 +9,7 @@ from yet_another_figma_mcp.figma.exceptions import (
     FigmaServerError,
 )
 
-__all__ = [
+__all__ = [  # noqa: RUF022
     "FigmaClient",
     "FigmaAPIError",
     "FigmaAuthenticationError",
