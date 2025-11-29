@@ -77,6 +77,25 @@ class FigmaClient:
             timeout=self.timeout,
         )
 
+    @staticmethod
+    def _parse_retry_after_header(response: httpx.Response) -> int | None:
+        """Retry-After ヘッダーをパースして秒数を取得
+
+        Args:
+            response: httpx レスポンス
+
+        Returns:
+            待機秒数（ヘッダーがない、または解析不能な場合は None）
+        """
+        retry_after = response.headers.get("Retry-After")
+        if not retry_after:
+            return None
+        try:
+            return int(retry_after)
+        except ValueError:
+            # HTTP-date format (RFC 7231) は現時点では未サポート
+            return None
+
     def _calculate_retry_delay(self, attempt: int, retry_after: int | None = None) -> float:
         """リトライ待機時間を計算（指数バックオフ + ジッター）
 
@@ -123,8 +142,7 @@ class FigmaClient:
             raise FigmaAPIError("Resource not found", status_code=404)
 
         if status_code == 429:
-            retry_after = response.headers.get("Retry-After")
-            retry_after_int = int(retry_after) if retry_after else None
+            retry_after_int = self._parse_retry_after_header(response)
             raise FigmaRateLimitError(retry_after=retry_after_int)
 
         if status_code >= 500:
@@ -172,8 +190,7 @@ class FigmaClient:
 
                 # リトライ対象のエラー
                 if response.status_code in (429, 500, 502, 503, 504):
-                    retry_after = response.headers.get("Retry-After")
-                    retry_after_int = int(retry_after) if retry_after else None
+                    retry_after_int = self._parse_retry_after_header(response)
 
                     if attempt < self.max_retries:
                         delay = self._calculate_retry_delay(attempt, retry_after_int)

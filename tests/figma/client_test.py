@@ -3,6 +3,7 @@
 # pyright: reportPrivateUsage=false
 # ruff: noqa: S105, S106  # Test tokens are not real secrets
 
+from collections.abc import Generator
 from unittest.mock import MagicMock, patch
 
 import httpx
@@ -66,49 +67,83 @@ class TestFigmaClientContextManager:
             assert client.token == "test-token"
 
 
+class TestFigmaClientParseRetryAfterHeader:
+    """Retry-After ヘッダーパースのテスト"""
+
+    def test_parse_integer_seconds(self) -> None:
+        """整数秒のパース"""
+        response = MagicMock(spec=httpx.Response)
+        response.headers = {"Retry-After": "60"}
+
+        result = FigmaClient._parse_retry_after_header(response)
+        assert result == 60
+
+    def test_parse_missing_header(self) -> None:
+        """ヘッダーがない場合"""
+        response = MagicMock(spec=httpx.Response)
+        response.headers = {}
+
+        result = FigmaClient._parse_retry_after_header(response)
+        assert result is None
+
+    def test_parse_http_date_returns_none(self) -> None:
+        """HTTP-date 形式は未サポートで None を返す"""
+        response = MagicMock(spec=httpx.Response)
+        response.headers = {"Retry-After": "Wed, 21 Oct 2015 07:28:00 GMT"}
+
+        result = FigmaClient._parse_retry_after_header(response)
+        assert result is None
+
+    def test_parse_invalid_value_returns_none(self) -> None:
+        """無効な値は None を返す"""
+        response = MagicMock(spec=httpx.Response)
+        response.headers = {"Retry-After": "invalid"}
+
+        result = FigmaClient._parse_retry_after_header(response)
+        assert result is None
+
+
 class TestFigmaClientRetryDelay:
     """リトライ待機時間計算のテスト"""
 
     def test_retry_after_respected(self) -> None:
         """Retry-After ヘッダーの尊重"""
-        client = FigmaClient(token="test-token")
-        delay = client._calculate_retry_delay(0, retry_after=10)
-        assert delay == 10.0
-        client.close()
+        with FigmaClient(token="test-token") as client:
+            delay = client._calculate_retry_delay(0, retry_after=10)
+            assert delay == 10.0
 
     def test_exponential_backoff(self) -> None:
         """指数バックオフの計算"""
-        client = FigmaClient(token="test-token", retry_base_delay=1.0)
-        # attempt=0: 1 * 2^0 = 1 (±25% jitter)
-        delay0 = client._calculate_retry_delay(0)
-        assert 0.75 <= delay0 <= 1.25
+        with FigmaClient(token="test-token", retry_base_delay=1.0) as client:
+            # attempt=0: 1 * 2^0 = 1 (±25% jitter)
+            delay0 = client._calculate_retry_delay(0)
+            assert 0.75 <= delay0 <= 1.25
 
-        # attempt=1: 1 * 2^1 = 2 (±25% jitter)
-        delay1 = client._calculate_retry_delay(1)
-        assert 1.5 <= delay1 <= 2.5
+            # attempt=1: 1 * 2^1 = 2 (±25% jitter)
+            delay1 = client._calculate_retry_delay(1)
+            assert 1.5 <= delay1 <= 2.5
 
-        # attempt=2: 1 * 2^2 = 4 (±25% jitter)
-        delay2 = client._calculate_retry_delay(2)
-        assert 3.0 <= delay2 <= 5.0
-        client.close()
+            # attempt=2: 1 * 2^2 = 4 (±25% jitter)
+            delay2 = client._calculate_retry_delay(2)
+            assert 3.0 <= delay2 <= 5.0
 
     def test_max_delay_cap(self) -> None:
         """最大待機時間のクリップ"""
-        client = FigmaClient(token="test-token", retry_base_delay=10.0, retry_max_delay=15.0)
-        # attempt=5: 10 * 2^5 = 320 → capped to 15
-        delay = client._calculate_retry_delay(5)
-        assert delay == 15.0
-        client.close()
+        with FigmaClient(token="test-token", retry_base_delay=10.0, retry_max_delay=15.0) as client:
+            # attempt=5: 10 * 2^5 = 320 → capped to 15
+            delay = client._calculate_retry_delay(5)
+            assert delay == 15.0
 
 
 class TestFigmaClientErrorHandling:
     """エラーハンドリングのテスト"""
 
     @pytest.fixture
-    def client(self) -> FigmaClient:
+    def client(self) -> Generator[FigmaClient]:
         """テスト用クライアント"""
         client = FigmaClient(token="test-token", max_retries=0)
-        return client
+        yield client
+        client.close()
 
     def test_authentication_error_401(self, client: FigmaClient) -> None:
         """401 認証エラー"""
@@ -117,7 +152,6 @@ class TestFigmaClientErrorHandling:
 
         with pytest.raises(FigmaAuthenticationError):
             client._handle_response_error(response)
-        client.close()
 
     def test_authentication_error_403(self, client: FigmaClient) -> None:
         """403 認証エラー"""
@@ -126,7 +160,6 @@ class TestFigmaClientErrorHandling:
 
         with pytest.raises(FigmaAuthenticationError):
             client._handle_response_error(response)
-        client.close()
 
     def test_file_not_found_error(self, client: FigmaClient) -> None:
         """404 ファイル未存在エラー"""
@@ -138,7 +171,6 @@ class TestFigmaClientErrorHandling:
 
         assert exc_info.value.file_id == "abc123"
         assert "abc123" in str(exc_info.value)
-        client.close()
 
     def test_rate_limit_error(self, client: FigmaClient) -> None:
         """429 レート制限エラー"""
@@ -150,7 +182,6 @@ class TestFigmaClientErrorHandling:
             client._handle_response_error(response)
 
         assert exc_info.value.retry_after == 60
-        client.close()
 
     def test_server_error(self, client: FigmaClient) -> None:
         """5xx サーバーエラー"""
@@ -161,7 +192,6 @@ class TestFigmaClientErrorHandling:
             client._handle_response_error(response)
 
         assert exc_info.value.status_code == 503
-        client.close()
 
     def test_generic_api_error(self, client: FigmaClient) -> None:
         """その他の API エラー"""
@@ -174,7 +204,6 @@ class TestFigmaClientErrorHandling:
 
         assert exc_info.value.status_code == 400
         assert "Bad request" in str(exc_info.value)
-        client.close()
 
 
 class TestFigmaClientGetFile:
