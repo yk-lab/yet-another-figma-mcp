@@ -90,8 +90,40 @@ class TestGetCachedFigmaFile:
         assert "message" in result
         assert result["file_id"] == "nonexistent"
 
+    def test_returns_error_for_invalid_file_id(self, store_with_data: CacheStore) -> None:
+        """無効な file_id はエラーを返す"""
+        result = get_cached_figma_file(store_with_data, "../invalid")
+        assert result["error"] == "invalid_file_id"
+        assert result["file_id"] == "../invalid"
+
+    def test_returns_error_when_file_data_missing(
+        self, tmp_path: Path, sample_figma_file: dict[str, Any]
+    ) -> None:
+        """インデックスはあるがファイルデータがない場合はエラーを返す"""
+        file_id = "indexonly"
+        file_dir = tmp_path / file_id
+        file_dir.mkdir(parents=True)
+
+        # インデックスのみ作成 (file_raw.json は作成しない)
+        from yet_another_figma_mcp.cache.index import build_index
+
+        index = build_index(sample_figma_file)
+        with open(file_dir / "nodes_index.json", "w") as f:
+            json.dump(index, f)
+
+        store = CacheStore(tmp_path)
+        result = get_cached_figma_file(store, file_id)
+        assert result["error"] == "file_data_missing"
+        assert result["file_id"] == file_id
+
 
 class TestGetCachedFigmaNode:
+    def test_returns_error_for_invalid_file_id(self, store_with_data: CacheStore) -> None:
+        """無効な file_id はエラーを返す"""
+        result = get_cached_figma_node(store_with_data, "../invalid", "1:1")
+        assert result["error"] == "invalid_file_id"
+        assert result["file_id"] == "../invalid"
+
     def test_returns_node_details(self, store_with_data: CacheStore) -> None:
         result = get_cached_figma_node(store_with_data, "test123", "1:1")
         assert "error" not in result
@@ -111,6 +143,16 @@ class TestGetCachedFigmaNode:
 
 
 class TestSearchFigmaNodesByName:
+    def test_returns_empty_for_invalid_file_id(self, store_with_data: CacheStore) -> None:
+        """無効な file_id は空リストを返す"""
+        results = search_figma_nodes_by_name(store_with_data, "../invalid", "Button", "exact")
+        assert results == []
+
+    def test_returns_empty_for_missing_index(self, store_with_data: CacheStore) -> None:
+        """インデックスがない場合は空リストを返す"""
+        results = search_figma_nodes_by_name(store_with_data, "nonexistent", "Button", "exact")
+        assert results == []
+
     def test_exact_match(self, store_with_data: CacheStore) -> None:
         results = search_figma_nodes_by_name(store_with_data, "test123", "Primary Button", "exact")
         assert len(results) == 1
@@ -147,6 +189,23 @@ class TestSearchFigmaNodesByName:
 
 
 class TestSearchFigmaFramesByTitle:
+    def test_returns_empty_for_invalid_file_id(self, store_with_data: CacheStore) -> None:
+        """無効な file_id は空リストを返す"""
+        results = search_figma_frames_by_title(store_with_data, "../invalid", "Screen", "exact")
+        assert results == []
+
+    def test_returns_empty_for_missing_index(self, store_with_data: CacheStore) -> None:
+        """インデックスがない場合は空リストを返す"""
+        results = search_figma_frames_by_title(store_with_data, "nonexistent", "Screen", "exact")
+        assert results == []
+
+    def test_limit(self, store_with_data: CacheStore) -> None:
+        """limit パラメータで取得件数を制限できる"""
+        results = search_figma_frames_by_title(
+            store_with_data, "test123", "Screen", "partial", limit=1
+        )
+        assert len(results) == 1
+
     def test_exact_match(self, store_with_data: CacheStore) -> None:
         results = search_figma_frames_by_title(store_with_data, "test123", "Login Screen", "exact")
         assert len(results) == 1
@@ -179,6 +238,16 @@ class TestSearchFigmaFramesByTitle:
 
 
 class TestListFigmaFrames:
+    def test_returns_empty_for_invalid_file_id(self, store_with_data: CacheStore) -> None:
+        """無効な file_id は空リストを返す"""
+        results = list_figma_frames(store_with_data, "../invalid")
+        assert results == []
+
+    def test_returns_empty_for_missing_index(self, store_with_data: CacheStore) -> None:
+        """インデックスがない場合は空リストを返す"""
+        results = list_figma_frames(store_with_data, "nonexistent")
+        assert results == []
+
     def test_lists_top_frames(self, store_with_data: CacheStore) -> None:
         results = list_figma_frames(store_with_data, "test123")
         assert len(results) == 2
