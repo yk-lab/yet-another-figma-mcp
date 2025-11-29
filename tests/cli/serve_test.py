@@ -16,7 +16,7 @@ class TestServeCommand:
     def test_serve_calls_run_server(self, tmp_path: Path) -> None:
         """serve コマンドが run_server を呼び出す"""
         with (
-            patch("yet_another_figma_mcp.cli.asyncio.run") as mock_asyncio_run,
+            patch("yet_another_figma_mcp.cli.serve.asyncio.run") as mock_asyncio_run,
             patch("yet_another_figma_mcp.server.set_cache_dir") as mock_set_cache_dir,
         ):
             mock_asyncio_run.return_value = None
@@ -32,7 +32,7 @@ class TestServeCommand:
     def test_serve_uses_default_cache_dir(self) -> None:
         """serve コマンドがデフォルトのキャッシュディレクトリを使用"""
         with (
-            patch("yet_another_figma_mcp.cli.asyncio.run") as mock_asyncio_run,
+            patch("yet_another_figma_mcp.cli.serve.asyncio.run") as mock_asyncio_run,
             patch("yet_another_figma_mcp.server.set_cache_dir") as mock_set_cache_dir,
         ):
             mock_asyncio_run.return_value = None
@@ -71,9 +71,9 @@ class TestServeCommand:
         import logging
 
         with (
-            patch("yet_another_figma_mcp.cli.asyncio.run") as mock_asyncio_run,
+            patch("yet_another_figma_mcp.cli.serve.asyncio.run") as mock_asyncio_run,
             patch("yet_another_figma_mcp.server.set_cache_dir"),
-            patch("yet_another_figma_mcp.cli.logging.basicConfig") as mock_basic_config,
+            patch("yet_another_figma_mcp.cli.serve.logging.basicConfig") as mock_basic_config,
         ):
             mock_asyncio_run.return_value = None
 
@@ -92,7 +92,7 @@ class TestServeCommandSignalHandling:
     def test_serve_handles_keyboard_interrupt(self, tmp_path: Path) -> None:
         """KeyboardInterrupt が適切にハンドリングされる"""
         with (
-            patch("yet_another_figma_mcp.cli.asyncio.run") as mock_asyncio_run,
+            patch("yet_another_figma_mcp.cli.serve.asyncio.run") as mock_asyncio_run,
             patch("yet_another_figma_mcp.server.set_cache_dir"),
         ):
             mock_asyncio_run.side_effect = KeyboardInterrupt()

@@ -34,7 +34,7 @@ Figma MCP サーバーで、Figma 無料プランの API 制限 (月 6 回) を�
 
 ### Core Flow
 
-1. **CLI** (`cli.py`) → ユーザーが `cache` コマンドで Figma API からファイル取得
+1. **CLI** (`cli/`) → `cache`, `serve`, `status` コマンドを提供
 1. **FigmaClient** (`figma/client.py`) → API 呼び出しと JSON 保存
 1. **Index Builder** (`cache/index.py`) → `by_id`, `by_name`, `by_frame_title` の 3 種類のインデックス生成
 1. **CacheStore** (`cache/store.py`) → ディスクからキャッシュをロード、インメモリで保持
@@ -42,6 +42,7 @@ Figma MCP サーバーで、Figma 無料プランの API 制限 (月 6 回) を�
 
 ### Key Modules
 
+- `cli/`: CLI サブコマンド (`cache.py`, `serve.py`, `status.py`)
 - `cache/store.py`: `CacheStore` クラス。`validate_file_id()` でパストラバーサル攻撃を防止
 - `cache/index.py`: `build_index()` で Figma ノードツリーを走査し検索用インデックス生成
 - `tools/handlers.py`: MCP ツール実装。`CacheStore` を使ってクエリ処理
