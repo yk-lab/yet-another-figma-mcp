@@ -32,10 +32,10 @@ class FigmaClient:
 
     Attributes:
         token: Figma API トークン
-        timeout: リクエストタイムアウト（秒）
+        timeout: リクエストタイムアウト (秒)
         max_retries: 最大リトライ回数
-        retry_base_delay: リトライ基本待機時間（秒）
-        retry_max_delay: リトライ最大待機時間（秒）
+        retry_base_delay: リトライ基本待機時間 (秒)
+        retry_max_delay: リトライ最大待機時間 (秒)
     """
 
     BASE_URL = "https://api.figma.com/v1"
@@ -53,10 +53,10 @@ class FigmaClient:
 
         Args:
             token: Figma API トークン。未指定時は環境変数 FIGMA_API_TOKEN から取得
-            timeout: リクエストタイムアウト（秒）
-            max_retries: 最大リトライ回数（レート制限・サーバーエラー時）
-            retry_base_delay: リトライ基本待機時間（秒）
-            retry_max_delay: リトライ最大待機時間（秒）
+            timeout: リクエストタイムアウト (秒)
+            max_retries: 最大リトライ回数 (レート制限・サーバーエラー時)
+            retry_base_delay: リトライ基本待機時間 (秒)
+            retry_max_delay: リトライ最大待機時間 (秒)
 
         Raises:
             ValueError: API トークンが未設定の場合
@@ -86,7 +86,7 @@ class FigmaClient:
             response: httpx レスポンス
 
         Returns:
-            待機秒数（ヘッダーがない、または解析不能な場合は None）
+            待機秒数 (ヘッダーがない、または解析不能な場合は None)
         """
         retry_after = response.headers.get("Retry-After")
         if not retry_after:
@@ -98,14 +98,14 @@ class FigmaClient:
             return None
 
     def _calculate_retry_delay(self, attempt: int, retry_after: int | None = None) -> float:
-        """リトライ待機時間を計算（指数バックオフ + ジッター）
+        """リトライ待機時間を計算 (指数バックオフ + ジッター)
 
         Args:
-            attempt: 現在の試行回数（0から開始）
-            retry_after: サーバー指定の待機時間（秒）
+            attempt: 現在の試行回数 (0から開始)
+            retry_after: サーバー指定の待機時間 (秒)
 
         Returns:
-            待機時間（秒）
+            待機時間 (秒)
         """
         if retry_after:
             return float(retry_after)
