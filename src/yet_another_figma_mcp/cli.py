@@ -1,6 +1,10 @@
 """CLI エントリーポイント"""
 
+import asyncio
 import json
+import logging
+import signal
+import sys
 from pathlib import Path
 from typing import Annotated
 
@@ -212,9 +216,42 @@ def cache(
 
 
 @app.command()
-def serve() -> None:
-    """MCP サーバーを起動"""
-    rprint("[yellow]Serve command - not yet implemented[/yellow]")
+def serve(
+    cache_dir: Annotated[
+        Path | None,
+        typer.Option("--cache-dir", "-d", help="キャッシュディレクトリ"),
+    ] = None,
+) -> None:
+    """MCP サーバーを起動 (stdio モード)"""
+    from yet_another_figma_mcp.server import run_server, set_cache_dir
+
+    # キャッシュディレクトリの設定
+    target_cache_dir = cache_dir or DEFAULT_CACHE_DIR
+    set_cache_dir(target_cache_dir)
+
+    # stderr にログ出力を設定（MCP は stdout を使用するため）
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        stream=sys.stderr,
+    )
+    logger = logging.getLogger("yet-another-figma-mcp")
+
+    logger.info("MCP サーバーを起動中...")
+    logger.info("キャッシュディレクトリ: %s", target_cache_dir)
+
+    # シグナルハンドラを設定
+    def signal_handler(signum: int, frame: object) -> None:
+        logger.info("シャットダウン シグナルを受信しました")
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    try:
+        asyncio.run(run_server())
+    except KeyboardInterrupt:
+        logger.info("サーバーを終了しました")
 
 
 @app.command()

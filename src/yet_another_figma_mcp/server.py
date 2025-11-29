@@ -1,6 +1,7 @@
 """MCP サーバー実装"""
 
 import json
+from pathlib import Path
 from typing import Any
 
 from mcp.server import Server
@@ -16,15 +17,24 @@ from yet_another_figma_mcp.tools import (
     search_figma_nodes_by_name,
 )
 
-# グローバルなキャッシュストア
+# グローバルなキャッシュストアとキャッシュディレクトリ
 _store: CacheStore | None = None
+_cache_dir: Path | None = None
+
+
+def set_cache_dir(cache_dir: Path) -> None:
+    """キャッシュディレクトリを設定"""
+    global _cache_dir, _store
+    _cache_dir = cache_dir
+    # キャッシュディレクトリが変更されたらストアをリセット
+    _store = None
 
 
 def get_store() -> CacheStore:
     """キャッシュストアを取得（シングルトン）"""
     global _store
     if _store is None:
-        _store = CacheStore()
+        _store = CacheStore(_cache_dir)
     return _store
 
 
