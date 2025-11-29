@@ -59,6 +59,32 @@ class TestServeCommand:
         assert result.exit_code == 0
         assert "--cache-dir" in result.stdout or "-d" in result.stdout
 
+    def test_serve_accepts_verbose_option(self) -> None:
+        """serve コマンドが --verbose オプションを受け付ける"""
+        result = runner.invoke(app, ["serve", "--help"])
+
+        assert result.exit_code == 0
+        assert "--verbose" in result.stdout or "-V" in result.stdout
+
+    def test_serve_verbose_sets_debug_level(self, tmp_path: Path) -> None:
+        """--verbose オプションで DEBUG レベルのログが有効になる"""
+        import logging
+
+        with (
+            patch("yet_another_figma_mcp.cli.asyncio.run") as mock_asyncio_run,
+            patch("yet_another_figma_mcp.server.set_cache_dir"),
+            patch("yet_another_figma_mcp.cli.logging.basicConfig") as mock_basic_config,
+        ):
+            mock_asyncio_run.return_value = None
+
+            result = runner.invoke(app, ["serve", "-d", str(tmp_path), "--verbose"])
+
+        assert result.exit_code == 0
+        # basicConfig が DEBUG レベルで呼ばれることを確認
+        mock_basic_config.assert_called_once()
+        call_kwargs = mock_basic_config.call_args[1]
+        assert call_kwargs["level"] == logging.DEBUG
+
 
 class TestServeCommandSignalHandling:
     """serve コマンドのシグナルハンドリングテスト"""

@@ -221,6 +221,10 @@ def serve(
         Path | None,
         typer.Option("--cache-dir", "-d", help="キャッシュディレクトリ"),
     ] = None,
+    verbose: Annotated[
+        bool,
+        typer.Option("--verbose", "-V", help="詳細ログを出力（DEBUG レベル）"),
+    ] = False,
 ) -> None:
     """MCP サーバーを起動 (stdio モード)"""
     from yet_another_figma_mcp.server import run_server, set_cache_dir
@@ -230,8 +234,9 @@ def serve(
     set_cache_dir(target_cache_dir)
 
     # stderr にログ出力を設定（MCP は stdout を使用するため）
+    log_level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
-        level=logging.INFO,
+        level=log_level,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         stream=sys.stderr,
     )
@@ -240,13 +245,12 @@ def serve(
     logger.info("MCP サーバーを起動中...")
     logger.info("キャッシュディレクトリ: %s", target_cache_dir)
 
-    # シグナルハンドラを設定
-    def signal_handler(signum: int, frame: object) -> None:
-        logger.info("シャットダウン シグナルを受信しました")
+    # SIGTERM ハンドラを設定（SIGINT は KeyboardInterrupt で処理）
+    def sigterm_handler(signum: int, frame: object) -> None:
+        logger.info("SIGTERM を受信しました")
         sys.exit(0)
 
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGTERM, sigterm_handler)
 
     try:
         asyncio.run(run_server())
