@@ -105,8 +105,6 @@ class TestGetCachedFigmaFile:
         file_dir.mkdir(parents=True)
 
         # インデックスのみ作成 (file_raw.json は作成しない)
-        from yet_another_figma_mcp.cache.index import build_index
-
         index = build_index(sample_figma_file)
         with open(file_dir / "nodes_index.json", "w") as f:
             json.dump(index, f)
