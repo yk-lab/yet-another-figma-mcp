@@ -29,7 +29,7 @@ echo 'FIGMA_API_TOKEN=figd_xxxxxx...' > .env
 
 Figma ファイルの URL から ID を取得:
 
-```
+```text
 https://www.figma.com/design/ABC123xyz/FileName
                            ^^^^^^^^^^^
                            これがファイル ID
