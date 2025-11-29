@@ -132,7 +132,8 @@ def search_figma_nodes_by_name(
         name: 検索するノード名
         match_mode: マッチモード ("exact" or "partial")
         limit: 最大取得件数
-        ignore_case: 大文字小文字を区別しない検索 (デフォルト: False)
+        ignore_case: exact モード時に大文字小文字を区別しない (デフォルト: False)。
+            partial モードは常に大文字小文字を無視
 
     Returns:
         マッチしたノードのリスト
@@ -195,7 +196,8 @@ def search_figma_frames_by_title(
         title: 検索するフレーム名
         match_mode: マッチモード ("exact" or "partial")
         limit: 最大取得件数
-        ignore_case: 大文字小文字を区別しない検索 (デフォルト: False)
+        ignore_case: exact モード時に大文字小文字を区別しない (デフォルト: False)。
+            partial モードは常に大文字小文字を無視
 
     Returns:
         マッチしたフレームノードのリスト
