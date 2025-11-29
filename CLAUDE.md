@@ -12,10 +12,10 @@ uv sync --group dev
 uv run pytest
 
 # Run a single test file
-uv run pytest tests/cache_test.py
+uv run pytest tests/cache/store_test.py
 
 # Run a specific test function
-uv run pytest tests/cache_test.py::TestCacheStore::test_cache_store_loads_from_disk
+uv run pytest tests/cache/store_test.py::TestCacheStore::test_cache_store_loads_from_disk
 
 # Type checking
 uv run pyright
@@ -42,7 +42,7 @@ Figma MCP サーバーで、Figma 無料プランの API 制限 (月 6 回) を�
 
 ### Key Modules
 
-- `cache/store.py`: `CacheStore` クラス。`_validate_file_id()` でパストラバーサル攻撃を防止
+- `cache/store.py`: `CacheStore` クラス。`validate_file_id()` でパストラバーサル攻撃を防止
 - `cache/index.py`: `build_index()` で Figma ノードツリーを走査し検索用インデックス生成
 - `tools/handlers.py`: MCP ツール実装。`CacheStore` を使ってクエリ処理
 - `server.py`: `mcp` SDK を使った stdio サーバー。グローバルシングルトン `_store` でキャッシュ共有
@@ -61,7 +61,7 @@ Figma MCP サーバーで、Figma 無料プランの API 制限 (月 6 回) を�
 
 - **Test naming**: `*_test.py` 形式 (`test_*.py` ではない)
 - **Type checker**: pyright (MCP SDK と同じ) を使用。type ignore 不要
-- **file_id validation**: 全ての `file_id` は `_validate_file_id()` を通す (正規表現 `^[a-zA-Z0-9_-]+$`)
+- **file_id validation**: 全ての `file_id` は `validate_file_id()` を通す (正規表現 `^[a-zA-Z0-9_-]+$`)
 - **tmp_path fixture**: テストで一時ファイルを使う場合は `tmp_path` を使用 (自動クリーンアップ)
 - **Parentheses style**: docstring・コメント (開発者向け) は半角括弧 `()`、ユーザー向けメッセージは全角括弧 `（）` を使用
 
