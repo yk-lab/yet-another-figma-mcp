@@ -12,6 +12,12 @@ from yet_another_figma_mcp.cache.store import CacheStore, InvalidFileIdError
 
 
 @pytest.fixture
+def empty_index() -> dict[str, Any]:
+    """空のインデックスデータ"""
+    return {"by_id": {}, "by_name": {}, "by_frame_title": {}}
+
+
+@pytest.fixture
 def sample_figma_file() -> dict[str, Any]:
     """サンプルの Figma ファイルデータ"""
     return {
@@ -216,10 +222,11 @@ class TestSaveIndex:
         index_path = tmp_path / "abc123" / "nodes_index.json"
         assert index_path.exists()
 
-    def test_save_index_creates_directory(self, tmp_path: Path) -> None:
+    def test_save_index_creates_directory(
+        self, tmp_path: Path, empty_index: dict[str, Any]
+    ) -> None:
         """ファイル ID 用のディレクトリが自動作成される"""
-        index: dict[str, Any] = {"by_id": {}, "by_name": {}, "by_frame_title": {}}
-        save_index(index, tmp_path, "new_file_id")
+        save_index(empty_index, tmp_path, "new_file_id")
         assert (tmp_path / "new_file_id").is_dir()
 
     def test_save_index_content_is_valid_json(self, tmp_path: Path) -> None:
@@ -263,37 +270,41 @@ class TestSaveIndex:
             loaded = json.load(f)
         assert loaded["by_id"]["0:0"]["name"] == "ログイン画面"
 
-    def test_save_index_rejects_invalid_file_id_path_traversal(self, tmp_path: Path) -> None:
+    def test_save_index_rejects_invalid_file_id_path_traversal(
+        self, tmp_path: Path, empty_index: dict[str, Any]
+    ) -> None:
         """パストラバーサル攻撃を含む file_id は拒否"""
-        index: dict[str, Any] = {"by_id": {}, "by_name": {}, "by_frame_title": {}}
         with pytest.raises(InvalidFileIdError):
-            save_index(index, tmp_path, "../../../etc/passwd")
+            save_index(empty_index, tmp_path, "../../../etc/passwd")
 
-    def test_save_index_rejects_invalid_file_id_with_slash(self, tmp_path: Path) -> None:
+    def test_save_index_rejects_invalid_file_id_with_slash(
+        self, tmp_path: Path, empty_index: dict[str, Any]
+    ) -> None:
         """スラッシュを含む file_id は拒否"""
-        index: dict[str, Any] = {"by_id": {}, "by_name": {}, "by_frame_title": {}}
         with pytest.raises(InvalidFileIdError):
-            save_index(index, tmp_path, "abc/def")
+            save_index(empty_index, tmp_path, "abc/def")
 
-    def test_save_index_rejects_empty_file_id(self, tmp_path: Path) -> None:
+    def test_save_index_rejects_empty_file_id(
+        self, tmp_path: Path, empty_index: dict[str, Any]
+    ) -> None:
         """空の file_id は拒否"""
-        index: dict[str, Any] = {"by_id": {}, "by_name": {}, "by_frame_title": {}}
         with pytest.raises(InvalidFileIdError):
-            save_index(index, tmp_path, "")
+            save_index(empty_index, tmp_path, "")
 
-    def test_save_index_overwrites_existing(self, tmp_path: Path) -> None:
+    def test_save_index_overwrites_existing(
+        self, tmp_path: Path, empty_index: dict[str, Any]
+    ) -> None:
         """既存のインデックスファイルを上書きする"""
         file_id = "test123"
         file_dir = tmp_path / file_id
         file_dir.mkdir(parents=True)
         (file_dir / "nodes_index.json").write_text('{"old": "data"}')
 
-        new_index: dict[str, Any] = {"by_id": {}, "by_name": {}, "by_frame_title": {}}
-        save_index(new_index, tmp_path, file_id)
+        save_index(empty_index, tmp_path, file_id)
 
         with open(file_dir / "nodes_index.json", encoding="utf-8") as f:
             loaded = json.load(f)
-        assert loaded == new_index
+        assert loaded == empty_index
         assert "old" not in loaded
 
 
