@@ -14,6 +14,7 @@ def build_index(file_data: dict[str, Any]) -> dict[str, Any]:
     by_frame_title: dict[str, list[str]] = {}
 
     def traverse(node: dict[str, Any], name_path: list[str], parent_id: str | None) -> None:
+        """ノードツリーを再帰的に走査してインデックスを構築"""
         node_id = node.get("id", "")
         node_name = node.get("name", "")
         node_type = node.get("type", "")

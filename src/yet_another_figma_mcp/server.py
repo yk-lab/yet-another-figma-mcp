@@ -44,6 +44,7 @@ def create_server() -> Server:
 
     @server.list_tools()
     async def list_tools() -> list[Tool]:
+        """利用可能な MCP ツール一覧を返す"""
         return [
             Tool(
                 name="get_cached_figma_file",
@@ -101,6 +102,11 @@ def create_server() -> Server:
                             "type": "integer",
                             "description": "最大取得件数",
                         },
+                        "ignore_case": {
+                            "type": "boolean",
+                            "default": False,
+                            "description": "大文字小文字を区別しない検索",
+                        },
                     },
                     "required": ["file_id", "name"],
                 },
@@ -129,6 +135,11 @@ def create_server() -> Server:
                             "type": "integer",
                             "description": "最大取得件数",
                         },
+                        "ignore_case": {
+                            "type": "boolean",
+                            "default": False,
+                            "description": "大文字小文字を区別しない検索",
+                        },
                     },
                     "required": ["file_id", "title"],
                 },
@@ -151,8 +162,9 @@ def create_server() -> Server:
 
     @server.call_tool()
     async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
+        """MCP ツールを呼び出す"""
         store = get_store()
-        result: dict[str, Any] | list[dict[str, Any]] | None
+        result: dict[str, Any] | list[dict[str, Any]]
 
         if name == "get_cached_figma_file":
             result = get_cached_figma_file(store, arguments["file_id"])
@@ -165,6 +177,7 @@ def create_server() -> Server:
                 arguments["name"],
                 arguments.get("match_mode", "exact"),
                 arguments.get("limit"),
+                arguments.get("ignore_case", False),
             )
         elif name == "search_figma_frames_by_title":
             result = search_figma_frames_by_title(
@@ -173,6 +186,7 @@ def create_server() -> Server:
                 arguments["title"],
                 arguments.get("match_mode", "exact"),
                 arguments.get("limit"),
+                arguments.get("ignore_case", False),
             )
         elif name == "list_figma_frames":
             result = list_figma_frames(store, arguments["file_id"])

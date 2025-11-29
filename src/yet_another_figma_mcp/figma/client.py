@@ -270,6 +270,7 @@ class FigmaClient:
         self._client.close()
 
     def __enter__(self) -> "FigmaClient":
+        """コンテキストマネージャの開始"""
         return self
 
     def __exit__(
@@ -278,4 +279,5 @@ class FigmaClient:
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
+        """コンテキストマネージャの終了"""
         self.close()

@@ -39,6 +39,11 @@ class CacheStore:
     """Figma ファイルキャッシュのインメモリストア"""
 
     def __init__(self, cache_dir: Path | None = None) -> None:
+        """キャッシュストアを初期化
+
+        Args:
+            cache_dir: キャッシュディレクトリ (デフォルト: ~/.yet_another_figma_mcp)
+        """
         self.cache_dir = cache_dir or Path.home() / ".yet_another_figma_mcp"
         self.files: dict[str, dict[str, Any]] = {}  # file_id -> raw JSON
         self.indexes: dict[str, dict[str, Any]] = {}  # file_id -> nodes_index

@@ -2,18 +2,48 @@
 
 from typing import Any, Literal
 
-from yet_another_figma_mcp.cache import CacheStore
+from yet_another_figma_mcp.cache import CacheStore, InvalidFileIdError, validate_file_id
 
 
-def get_cached_figma_file(store: CacheStore, file_id: str) -> dict[str, Any] | None:
-    """指定ファイルのノードツリーやメタデータを取得"""
+def _handle_invalid_file_id(file_id: str) -> dict[str, Any]:
+    """無効な file_id のエラーレスポンスを生成"""
+    return {
+        "error": "invalid_file_id",
+        "message": f"無効なファイル ID: '{file_id}'",
+        "file_id": file_id,
+    }
+
+
+def get_cached_figma_file(store: CacheStore, file_id: str) -> dict[str, Any]:
+    """指定ファイルのノードツリーやメタデータを取得
+
+    Args:
+        store: キャッシュストア
+        file_id: Figma ファイル ID
+
+    Returns:
+        ファイルメタデータとフレーム一覧。エラー時は error フィールドを含む
+    """
+    try:
+        validate_file_id(file_id)
+    except InvalidFileIdError:
+        return _handle_invalid_file_id(file_id)
+
     index = store.get_index(file_id)
     if not index:
-        return None
+        return {
+            "error": "file_not_found",
+            "message": f"ファイル '{file_id}' がキャッシュに見つかりません",
+            "file_id": file_id,
+        }
 
     file_data = store.get_file(file_id)
     if not file_data:
-        return None
+        return {
+            "error": "file_data_missing",
+            "message": f"ファイル '{file_id}' のデータが見つかりません",
+            "file_id": file_id,
+        }
 
     # ルートノードと主要フレーム一覧を返す
     frames: list[dict[str, Any]] = []
@@ -38,13 +68,32 @@ def get_cached_figma_file(store: CacheStore, file_id: str) -> dict[str, Any] | N
     }
 
 
-def get_cached_figma_node(store: CacheStore, file_id: str, node_id: str) -> dict[str, Any] | None:
-    """単一ノードの詳細情報を取得"""
+def get_cached_figma_node(store: CacheStore, file_id: str, node_id: str) -> dict[str, Any]:
+    """単一ノードの詳細情報を取得
+
+    Args:
+        store: キャッシュストア
+        file_id: Figma ファイル ID
+        node_id: ノード ID
+
+    Returns:
+        ノードの詳細情報。エラー時は error フィールドを含む
+    """
+    try:
+        validate_file_id(file_id)
+    except InvalidFileIdError:
+        return _handle_invalid_file_id(file_id)
+
     file_data = store.get_file(file_id)
     if not file_data:
-        return None
+        return {
+            "error": "file_not_found",
+            "message": f"ファイル '{file_id}' がキャッシュに見つかりません",
+            "file_id": file_id,
+        }
 
     def find_node(node: dict[str, Any], target_id: str) -> dict[str, Any] | None:
+        """ノードツリーから指定 ID のノードを再帰的に検索"""
         if node.get("id") == target_id:
             return node
         for child in node.get("children", []):
@@ -54,7 +103,17 @@ def get_cached_figma_node(store: CacheStore, file_id: str, node_id: str) -> dict
         return None
 
     document = file_data.get("document", {})
-    return find_node(document, node_id)
+    result = find_node(document, node_id)
+
+    if not result:
+        return {
+            "error": "node_not_found",
+            "message": f"ノード '{node_id}' が見つかりません",
+            "file_id": file_id,
+            "node_id": node_id,
+        }
+
+    return result
 
 
 def search_figma_nodes_by_name(
@@ -63,8 +122,27 @@ def search_figma_nodes_by_name(
     name: str,
     match_mode: Literal["exact", "partial"] = "exact",
     limit: int | None = None,
+    ignore_case: bool = False,
 ) -> list[dict[str, Any]]:
-    """ノード名でノードを検索"""
+    """ノード名でノードを検索
+
+    Args:
+        store: キャッシュストア
+        file_id: Figma ファイル ID
+        name: 検索するノード名
+        match_mode: マッチモード ("exact" or "partial")
+        limit: 最大取得件数
+        ignore_case: exact モード時に大文字小文字を区別しない (デフォルト: False)。
+            partial モードは常に大文字小文字を無視
+
+    Returns:
+        マッチしたノードのリスト
+    """
+    try:
+        validate_file_id(file_id)
+    except InvalidFileIdError:
+        return []
+
     index = store.get_index(file_id)
     if not index:
         return []
@@ -74,12 +152,21 @@ def search_figma_nodes_by_name(
     by_id = index.get("by_id", {})
 
     if match_mode == "exact":
-        node_ids = by_name.get(name, [])
-        for node_id in node_ids:
-            node_info = by_id.get(node_id, {})
-            results.append({"id": node_id, **node_info})
+        if ignore_case:
+            # 大文字小文字を無視した完全一致
+            name_lower = name.lower()
+            for node_name, node_ids in by_name.items():
+                if node_name.lower() == name_lower:
+                    for node_id in node_ids:
+                        node_info = by_id.get(node_id, {})
+                        results.append({"id": node_id, **node_info})
+        else:
+            node_ids = by_name.get(name, [])
+            for node_id in node_ids:
+                node_info = by_id.get(node_id, {})
+                results.append({"id": node_id, **node_info})
     else:
-        # partial match
+        # partial match (常に大文字小文字を無視)
         name_lower = name.lower()
         for node_name, node_ids in by_name.items():
             if name_lower in node_name.lower():
@@ -99,8 +186,27 @@ def search_figma_frames_by_title(
     title: str,
     match_mode: Literal["exact", "partial"] = "exact",
     limit: int | None = None,
+    ignore_case: bool = False,
 ) -> list[dict[str, Any]]:
-    """フレーム名からフレームノードを検索"""
+    """フレーム名からフレームノードを検索
+
+    Args:
+        store: キャッシュストア
+        file_id: Figma ファイル ID
+        title: 検索するフレーム名
+        match_mode: マッチモード ("exact" or "partial")
+        limit: 最大取得件数
+        ignore_case: exact モード時に大文字小文字を区別しない (デフォルト: False)。
+            partial モードは常に大文字小文字を無視
+
+    Returns:
+        マッチしたフレームノードのリスト
+    """
+    try:
+        validate_file_id(file_id)
+    except InvalidFileIdError:
+        return []
+
     index = store.get_index(file_id)
     if not index:
         return []
@@ -110,12 +216,21 @@ def search_figma_frames_by_title(
     by_id = index.get("by_id", {})
 
     if match_mode == "exact":
-        node_ids = by_frame_title.get(title, [])
-        for node_id in node_ids:
-            node_info = by_id.get(node_id, {})
-            results.append({"id": node_id, **node_info})
+        if ignore_case:
+            # 大文字小文字を無視した完全一致
+            title_lower = title.lower()
+            for frame_title, node_ids in by_frame_title.items():
+                if frame_title.lower() == title_lower:
+                    for node_id in node_ids:
+                        node_info = by_id.get(node_id, {})
+                        results.append({"id": node_id, **node_info})
+        else:
+            node_ids = by_frame_title.get(title, [])
+            for node_id in node_ids:
+                node_info = by_id.get(node_id, {})
+                results.append({"id": node_id, **node_info})
     else:
-        # partial match
+        # partial match (常に大文字小文字を無視)
         title_lower = title.lower()
         for frame_title, node_ids in by_frame_title.items():
             if title_lower in frame_title.lower():
@@ -131,6 +246,11 @@ def search_figma_frames_by_title(
 
 def list_figma_frames(store: CacheStore, file_id: str) -> list[dict[str, Any]]:
     """ファイル直下の主要フレーム一覧を取得"""
+    try:
+        validate_file_id(file_id)
+    except InvalidFileIdError:
+        return []
+
     index = store.get_index(file_id)
     if not index:
         return []
