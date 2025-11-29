@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from yet_another_figma_mcp.cache.store import validate_file_id
+
 
 def build_index(file_data: dict[str, Any]) -> dict[str, Any]:
     """Figma ファイル JSON からノードインデックスを生成"""
@@ -55,7 +57,17 @@ def build_index(file_data: dict[str, Any]) -> dict[str, Any]:
 
 
 def save_index(index: dict[str, Any], cache_dir: Path, file_id: str) -> None:
-    """インデックスをディスクに保存"""
+    """インデックスをディスクに保存
+
+    Args:
+        index: 保存するインデックスデータ
+        cache_dir: キャッシュディレクトリのパス
+        file_id: Figma ファイル ID
+
+    Raises:
+        InvalidFileIdError: file_id が無効な形式の場合
+    """
+    validate_file_id(file_id)
     file_dir = cache_dir / file_id
     file_dir.mkdir(parents=True, exist_ok=True)
 

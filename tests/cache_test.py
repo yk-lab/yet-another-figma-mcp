@@ -101,7 +101,7 @@ class TestBuildIndex:
         assert index["by_id"]["1:2"]["parent_id"] == "1:1"
 
     def test_build_index_generates_path(self, sample_figma_file: dict[str, Any]) -> None:
-        """by_id に path 情報が生成される（Document > Page > Frame > ... 形式）"""
+        """by_id に path 情報が生成される (Document > Page > Frame > ... 形式)"""
         index = build_index(sample_figma_file)
         # Document
         assert index["by_id"]["0:0"]["path"] == ["Document"]
@@ -253,9 +253,33 @@ class TestSaveIndex:
         }
         save_index(index, tmp_path, "test123")
         index_path = tmp_path / "test123" / "nodes_index.json"
+
+        # ファイル上に生の日本語テキストが残っていることを確認
+        raw_text = index_path.read_text(encoding="utf-8")
+        assert "ログイン画面" in raw_text
+
+        # json.load でも正しく読み込める
         with open(index_path, encoding="utf-8") as f:
             loaded = json.load(f)
         assert loaded["by_id"]["0:0"]["name"] == "ログイン画面"
+
+    def test_save_index_rejects_invalid_file_id_path_traversal(self, tmp_path: Path) -> None:
+        """パストラバーサル攻撃を含む file_id は拒否"""
+        index: dict[str, Any] = {"by_id": {}, "by_name": {}, "by_frame_title": {}}
+        with pytest.raises(InvalidFileIdError):
+            save_index(index, tmp_path, "../../../etc/passwd")
+
+    def test_save_index_rejects_invalid_file_id_with_slash(self, tmp_path: Path) -> None:
+        """スラッシュを含む file_id は拒否"""
+        index: dict[str, Any] = {"by_id": {}, "by_name": {}, "by_frame_title": {}}
+        with pytest.raises(InvalidFileIdError):
+            save_index(index, tmp_path, "abc/def")
+
+    def test_save_index_rejects_empty_file_id(self, tmp_path: Path) -> None:
+        """空の file_id は拒否"""
+        index: dict[str, Any] = {"by_id": {}, "by_name": {}, "by_frame_title": {}}
+        with pytest.raises(InvalidFileIdError):
+            save_index(index, tmp_path, "")
 
     def test_save_index_overwrites_existing(self, tmp_path: Path) -> None:
         """既存のインデックスファイルを上書きする"""
