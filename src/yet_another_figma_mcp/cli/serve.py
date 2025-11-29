@@ -42,7 +42,7 @@ def serve(
     logger.info("キャッシュディレクトリ: %s", target_cache_dir)
 
     # SIGTERM ハンドラを設定 (SIGINT は KeyboardInterrupt で処理)
-    def sigterm_handler(signum: int, frame: object) -> None:
+    def sigterm_handler(_signum: int, _frame: object) -> None:
         """SIGTERM シグナルを受信したときの処理"""
         logger.info("SIGTERM を受信しました")
         sys.exit(0)

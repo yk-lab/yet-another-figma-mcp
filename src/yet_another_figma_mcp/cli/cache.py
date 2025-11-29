@@ -25,6 +25,7 @@ console = Console()
 
 def _save_file_raw(file_data: dict[str, object], file_id: str, cache_dir: Path) -> Path:
     """ファイル JSON をディスクに保存"""
+    validate_file_id(file_id)
     file_dir = cache_dir / file_id
     file_dir.mkdir(parents=True, exist_ok=True)
     file_path = file_dir / "file_raw.json"
@@ -35,6 +36,7 @@ def _save_file_raw(file_data: dict[str, object], file_id: str, cache_dir: Path) 
 
 def _save_cache_metadata(file_id: str, cache_dir: Path) -> None:
     """キャッシュのメタデータ (タイムスタンプ等) を保存"""
+    validate_file_id(file_id)
     file_dir = cache_dir / file_id
     file_dir.mkdir(parents=True, exist_ok=True)
     meta_path = file_dir / "cache_meta.json"

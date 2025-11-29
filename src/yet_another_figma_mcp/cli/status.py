@@ -10,6 +10,7 @@ from rich import print as rprint
 from rich.console import Console
 from rich.table import Table
 
+from yet_another_figma_mcp.cache import InvalidFileIdError, validate_file_id
 from yet_another_figma_mcp.cli.app import DEFAULT_CACHE_DIR
 
 console = Console()
@@ -31,6 +32,13 @@ def _get_cached_files_info(cache_dir: Path) -> list[dict[str, object]]:
             continue
 
         file_id = file_dir.name
+
+        # file_id のバリデーション（不正なディレクトリ名をスキップ）
+        try:
+            validate_file_id(file_id)
+        except InvalidFileIdError:
+            continue
+
         file_raw_path = file_dir / "file_raw.json"
         index_path = file_dir / "nodes_index.json"
         meta_path = file_dir / "cache_meta.json"
