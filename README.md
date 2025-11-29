@@ -1,5 +1,7 @@
 # YetAnotherFigmaMCP
 
+[![CI](https://github.com/yk-lab/yet-another-figma-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/yk-lab/yet-another-figma-mcp/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/yk-lab/yet-another-figma-mcp/graph/badge.svg)](https://codecov.io/gh/yk-lab/yet-another-figma-mcp)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
