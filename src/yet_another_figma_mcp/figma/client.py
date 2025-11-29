@@ -4,6 +4,7 @@ import logging
 import os
 import random
 import time
+from types import TracebackType
 from typing import Any
 
 import httpx
@@ -271,5 +272,10 @@ class FigmaClient:
     def __enter__(self) -> "FigmaClient":
         return self
 
-    def __exit__(self, *args: object) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         self.close()
