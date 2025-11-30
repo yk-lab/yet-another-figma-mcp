@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/yk-lab/yet-another-figma-mcp/compare/v0.1.0...v0.1.1) (2025-11-30)
+
+
+### Bug Fixes
+
+* add error handling to MCP server call_tool to prevent crashes ([#59](https://github.com/yk-lab/yet-another-figma-mcp/issues/59)) ([f090b58](https://github.com/yk-lab/yet-another-figma-mcp/commit/f090b588728e8c05720fd194225217449529c7d6))
+
 ## 0.1.0 (2025-11-30)
 
 
