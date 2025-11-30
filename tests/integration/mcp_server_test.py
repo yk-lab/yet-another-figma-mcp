@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from mcp.types import CallToolRequest, CallToolRequestParams, ListToolsRequest
@@ -372,7 +373,7 @@ class TestMCPServerCallToolErrorHandling:
         )
         result = server_result.root
 
-        # MCP SDK がエラーレスポンスを返す（isError フラグで判定）
+        # MCP SDK がエラーレスポンスを返す (isError フラグで判定)
         assert len(result.content) == 1
         assert result.isError is True
 
@@ -395,9 +396,40 @@ class TestMCPServerCallToolErrorHandling:
         )
         result = server_result.root
 
-        # MCP SDK がエラーレスポンスを返す（isError フラグで判定）
+        # MCP SDK がエラーレスポンスを返す (isError フラグで判定)
         assert len(result.content) == 1
         assert result.isError is True
+
+    @pytest.mark.asyncio
+    async def test_call_tool_unexpected_exception_returns_internal_error(
+        self, server_with_cache: tuple[Any, str]
+    ) -> None:
+        """予期しない例外が発生した場合は internal_error を返す"""
+        server, file_id = server_with_cache
+
+        call_tool_handler = server.request_handlers[CallToolRequest]
+
+        # get_cached_figma_file 内で例外を発生させる
+        with patch(
+            "yet_another_figma_mcp.server.get_cached_figma_file",
+            side_effect=RuntimeError("Unexpected error"),
+        ):
+            server_result = await call_tool_handler(
+                CallToolRequest(
+                    method="tools/call",
+                    params=CallToolRequestParams(
+                        name="get_cached_figma_file",
+                        arguments={"file_id": file_id},
+                    ),
+                )
+            )
+            result = server_result.root
+
+        assert len(result.content) == 1
+        data = json.loads(result.content[0].text)
+        assert data["error"] == "internal_error"
+        assert "RuntimeError" in data["message"]
+        assert data["tool"] == "get_cached_figma_file"
 
 
 class TestCacheStoreSingleton:

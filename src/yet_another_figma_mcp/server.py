@@ -204,7 +204,7 @@ def create_server() -> Server:
             return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
         except Exception as e:
             # 予期しないエラーをキャッチしてサーバークラッシュを防止
-            logger.exception("Unexpected error in tool %s: %s", name, e)
+            logger.exception("Unexpected error in tool %s", name)
             result = {
                 "error": "internal_error",
                 "message": f"ツール実行中に予期しないエラーが発生しました（{type(e).__name__}）",
