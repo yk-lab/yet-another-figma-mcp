@@ -241,8 +241,8 @@ class TestMCPServerCallTool:
 
         assert len(result.content) == 1
         data = json.loads(result.content[0].text)
-        assert "error" in data
-        assert "Unknown tool" in data["error"]
+        assert data["error"] == "unknown_tool"
+        assert "Unknown tool" in data["message"]
 
 
 class TestMCPServerToolCallsDirect:
@@ -342,6 +342,62 @@ class TestMCPServerErrorHandlingDirect:
         result = get_cached_figma_file(store, "../invalid")
 
         assert result["error"] == "invalid_file_id"
+
+
+class TestMCPServerCallToolErrorHandling:
+    """MCP サーバーの call_tool エラーハンドリングテスト
+
+    注意: MCP SDK はツールのスキーマバリデーションを行うため、
+    必須引数が不足している場合は call_tool ハンドラに到達する前にエラーが返される。
+    SDK のバリデーションをバイパスするテストはアーキテクチャ的に不適切なため、
+    ここでは SDK の動作を文書化するテストのみを行う。
+    """
+
+    @pytest.mark.asyncio
+    async def test_call_tool_missing_required_argument_returns_error(
+        self, server_with_cache: tuple[Any, str]
+    ) -> None:
+        """必須引数が不足している場合は MCP SDK がエラーを返す"""
+        server, _ = server_with_cache
+
+        call_tool_handler = server.request_handlers[CallToolRequest]
+        server_result = await call_tool_handler(
+            CallToolRequest(
+                method="tools/call",
+                params=CallToolRequestParams(
+                    name="get_cached_figma_file",
+                    arguments={},  # file_id が不足
+                ),
+            )
+        )
+        result = server_result.root
+
+        # MCP SDK がエラーレスポンスを返す（isError フラグで判定）
+        assert len(result.content) == 1
+        assert result.isError is True
+
+    @pytest.mark.asyncio
+    async def test_call_tool_missing_node_id_returns_error(
+        self, server_with_cache: tuple[Any, str]
+    ) -> None:
+        """get_cached_figma_node で node_id が不足している場合"""
+        server, file_id = server_with_cache
+
+        call_tool_handler = server.request_handlers[CallToolRequest]
+        server_result = await call_tool_handler(
+            CallToolRequest(
+                method="tools/call",
+                params=CallToolRequestParams(
+                    name="get_cached_figma_node",
+                    arguments={"file_id": file_id},  # node_id が不足
+                ),
+            )
+        )
+        result = server_result.root
+
+        # MCP SDK がエラーレスポンスを返す（isError フラグで判定）
+        assert len(result.content) == 1
+        assert result.isError is True
 
 
 class TestCacheStoreSingleton:
