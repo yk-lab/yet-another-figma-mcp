@@ -1,6 +1,7 @@
 """MCP サーバー実装"""
 
 import json
+from logging import getLogger
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +17,8 @@ from yet_another_figma_mcp.tools import (
     search_figma_frames_by_title,
     search_figma_nodes_by_name,
 )
+
+logger = getLogger(__name__)
 
 # グローバルなキャッシュストアとキャッシュディレクトリ
 _store: CacheStore | None = None
@@ -162,38 +165,52 @@ def create_server() -> Server:
 
     @server.call_tool()
     async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
-        """MCP ツールを呼び出す"""
-        store = get_store()
-        result: dict[str, Any] | list[dict[str, Any]]
+        """MCP ツールを呼び出す
 
-        if name == "get_cached_figma_file":
-            result = get_cached_figma_file(store, arguments["file_id"])
-        elif name == "get_cached_figma_node":
-            result = get_cached_figma_node(store, arguments["file_id"], arguments["node_id"])
-        elif name == "search_figma_nodes_by_name":
-            result = search_figma_nodes_by_name(
-                store,
-                arguments["file_id"],
-                arguments["name"],
-                arguments.get("match_mode", "exact"),
-                arguments.get("limit"),
-                arguments.get("ignore_case", False),
-            )
-        elif name == "search_figma_frames_by_title":
-            result = search_figma_frames_by_title(
-                store,
-                arguments["file_id"],
-                arguments["title"],
-                arguments.get("match_mode", "exact"),
-                arguments.get("limit"),
-                arguments.get("ignore_case", False),
-            )
-        elif name == "list_figma_frames":
-            result = list_figma_frames(store, arguments["file_id"])
-        else:
-            result = {"error": f"Unknown tool: {name}"}
+        Note: MCP SDK がスキーマバリデーションを行うため、必須引数の不足は
+        このハンドラに到達する前に SDK によって処理される。
+        """
+        try:
+            store = get_store()
+            result: dict[str, Any] | list[dict[str, Any]]
 
-        return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+            if name == "get_cached_figma_file":
+                result = get_cached_figma_file(store, arguments["file_id"])
+            elif name == "get_cached_figma_node":
+                result = get_cached_figma_node(store, arguments["file_id"], arguments["node_id"])
+            elif name == "search_figma_nodes_by_name":
+                result = search_figma_nodes_by_name(
+                    store,
+                    arguments["file_id"],
+                    arguments["name"],
+                    arguments.get("match_mode", "exact"),
+                    arguments.get("limit"),
+                    arguments.get("ignore_case", False),
+                )
+            elif name == "search_figma_frames_by_title":
+                result = search_figma_frames_by_title(
+                    store,
+                    arguments["file_id"],
+                    arguments["title"],
+                    arguments.get("match_mode", "exact"),
+                    arguments.get("limit"),
+                    arguments.get("ignore_case", False),
+                )
+            elif name == "list_figma_frames":
+                result = list_figma_frames(store, arguments["file_id"])
+            else:
+                result = {"error": "unknown_tool", "message": f"不明なツールです（{name}）"}
+
+            return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+        except Exception as e:
+            # 予期しないエラーをキャッチしてサーバークラッシュを防止
+            logger.exception("Unexpected error in tool %s", name)
+            result = {
+                "error": "internal_error",
+                "message": f"ツール実行中に予期しないエラーが発生しました（{type(e).__name__}）",
+                "tool": name,
+            }
+            return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
 
     return server
 
