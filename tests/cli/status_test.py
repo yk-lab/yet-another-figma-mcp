@@ -297,3 +297,45 @@ class TestStatusCommand:
         assert data[0]["file_id"] == "abc123"
         # mtime からのフォールバックで cached_at が設定される
         assert data[0]["cached_at"] is not None
+
+    def test_status_skips_directory_without_file_raw(self, tmp_path: Path) -> None:
+        """file_raw.json がないディレクトリはスキップされる"""
+        # 有効なキャッシュ
+        valid_dir = tmp_path / "valid123"
+        valid_dir.mkdir(parents=True)
+        with open(valid_dir / "file_raw.json", "w") as f:
+            json.dump({"name": "Valid File"}, f)
+
+        # file_raw.json がないディレクトリ
+        empty_dir = tmp_path / "emptydir"
+        empty_dir.mkdir(parents=True)
+        # インデックスだけある状態
+        (empty_dir / "nodes_index.json").write_text("{}")
+
+        result = runner.invoke(app, ["status", "--cache-dir", str(tmp_path), "--json"])
+
+        data = json.loads(result.output)
+        assert len(data) == 1
+        assert data[0]["file_id"] == "valid123"
+
+    def test_status_handles_invalid_datetime_format(
+        self, tmp_path: Path, sample_figma_file: dict[str, Any]
+    ) -> None:
+        """不正な日時形式でもファイルは表示される（テーブル出力で確認）"""
+        file_dir = tmp_path / "abc123"
+        file_dir.mkdir(parents=True)
+
+        with open(file_dir / "file_raw.json", "w") as f:
+            json.dump(sample_figma_file, f)
+
+        # 不正な日時形式のメタデータ
+        with open(file_dir / "cache_meta.json", "w") as f:
+            json.dump({"cached_at": "not-a-valid-date"}, f)
+
+        # テーブル出力で実行（_format_datetime が呼ばれる）
+        result = runner.invoke(app, ["status", "--cache-dir", str(tmp_path)])
+
+        assert result.exit_code == 0
+        assert "abc123" in result.output
+        # 不正な日時はそのまま表示される
+        assert "not-a-valid-date" in result.output
