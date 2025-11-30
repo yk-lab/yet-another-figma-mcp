@@ -1,22 +1,17 @@
-"""CLI エントリーポイント"""
+"""cache コマンド実装"""
 
-import asyncio
 import json
-import logging
-import signal
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated
 
 import typer
-from rich import print as rprint
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from yet_another_figma_mcp import __version__
 from yet_another_figma_mcp.cache import InvalidFileIdError, validate_file_id
 from yet_another_figma_mcp.cache.index import build_index, save_index
+from yet_another_figma_mcp.cli.app import DEFAULT_CACHE_DIR
 from yet_another_figma_mcp.figma import (
     FigmaAPIError,
     FigmaAuthenticationError,
@@ -26,41 +21,11 @@ from yet_another_figma_mcp.figma import (
 )
 
 console = Console()
-DEFAULT_CACHE_DIR = Path.home() / ".yet_another_figma_mcp"
-
-app = typer.Typer(
-    name="yet-another-figma-mcp",
-    help="YetAnotherFigmaMCP - Figma ファイルキャッシュ MCP サーバー",
-    no_args_is_help=True,
-)
-
-
-def version_callback(value: bool) -> None:
-    """バージョン情報を表示"""
-    if value:
-        rprint(f"yet-another-figma-mcp {__version__}")
-        raise typer.Exit()
-
-
-@app.callback()
-def main(
-    version: Annotated[
-        bool | None,
-        typer.Option(
-            "--version",
-            "-v",
-            callback=version_callback,
-            is_eager=True,
-            help="バージョン情報を表示",
-        ),
-    ] = None,
-) -> None:
-    """YetAnotherFigmaMCP - Figma ファイルキャッシュ MCP サーバー"""
-    pass
 
 
 def _save_file_raw(file_data: dict[str, object], file_id: str, cache_dir: Path) -> Path:
     """ファイル JSON をディスクに保存"""
+    validate_file_id(file_id)
     file_dir = cache_dir / file_id
     file_dir.mkdir(parents=True, exist_ok=True)
     file_path = file_dir / "file_raw.json"
@@ -71,6 +36,7 @@ def _save_file_raw(file_data: dict[str, object], file_id: str, cache_dir: Path) 
 
 def _save_cache_metadata(file_id: str, cache_dir: Path) -> None:
     """キャッシュのメタデータ (タイムスタンプ等) を保存"""
+    validate_file_id(file_id)
     file_dir = cache_dir / file_id
     file_dir.mkdir(parents=True, exist_ok=True)
     meta_path = file_dir / "cache_meta.json"
@@ -154,7 +120,6 @@ def _cache_single_file(
     return True
 
 
-@app.command()
 def cache(
     file_id: Annotated[
         list[str] | None,
@@ -236,57 +201,3 @@ def cache(
     else:
         console.print(f"[yellow]完了: {success_count} 成功, {fail_count} 失敗[/yellow]")
         raise typer.Exit(1)
-
-
-@app.command()
-def serve(
-    cache_dir: Annotated[
-        Path | None,
-        typer.Option("--cache-dir", "-d", help="キャッシュディレクトリ"),
-    ] = None,
-    verbose: Annotated[
-        bool,
-        typer.Option("--verbose", "-V", help="詳細ログを出力（DEBUG レベル）"),
-    ] = False,
-) -> None:
-    """MCP サーバーを起動 (stdio モード)"""
-    from yet_another_figma_mcp.server import run_server, set_cache_dir
-
-    # キャッシュディレクトリの設定
-    target_cache_dir = cache_dir or DEFAULT_CACHE_DIR
-    set_cache_dir(target_cache_dir)
-
-    # stderr にログ出力を設定 (MCP は stdout を使用するため)
-    log_level = logging.DEBUG if verbose else logging.INFO
-    logging.basicConfig(
-        level=log_level,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        stream=sys.stderr,
-    )
-    logger = logging.getLogger("yet-another-figma-mcp")
-
-    logger.info("MCP サーバーを起動中...")
-    logger.info("キャッシュディレクトリ: %s", target_cache_dir)
-
-    # SIGTERM ハンドラを設定 (SIGINT は KeyboardInterrupt で処理)
-    def sigterm_handler(signum: int, frame: object) -> None:
-        """SIGTERM シグナルを受信したときの処理"""
-        logger.info("SIGTERM を受信しました")
-        sys.exit(0)
-
-    signal.signal(signal.SIGTERM, sigterm_handler)
-
-    try:
-        asyncio.run(run_server())
-    except KeyboardInterrupt:
-        logger.info("サーバーを終了しました")
-
-
-@app.command()
-def status() -> None:
-    """サーバーの動作状況を確認"""
-    rprint("[yellow]Status command - not yet implemented[/yellow]")
-
-
-if __name__ == "__main__":
-    app()

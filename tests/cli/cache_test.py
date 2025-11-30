@@ -60,7 +60,7 @@ class TestCacheCommandValidation:
 
     def test_invalid_file_id_shows_error(self, tmp_path: Path) -> None:
         """無効なファイル ID でエラー"""
-        with patch("yet_another_figma_mcp.cli.FigmaClient"):
+        with patch("yet_another_figma_mcp.cli.cache.FigmaClient"):
             result = runner.invoke(app, ["cache", "-f", "../invalid", "-d", str(tmp_path)])
         assert result.exit_code == 1
         assert "無効なファイル ID" in result.stdout
@@ -81,7 +81,7 @@ class TestCacheCommandSuccess:
 
     def test_cache_single_file(self, tmp_path: Path, mock_figma_response: dict[str, Any]) -> None:
         """単一ファイルのキャッシュ"""
-        with patch("yet_another_figma_mcp.cli.FigmaClient") as mock_client_class:
+        with patch("yet_another_figma_mcp.cli.cache.FigmaClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client.get_file.return_value = mock_figma_response
             mock_client.__enter__ = MagicMock(return_value=mock_client)
@@ -115,7 +115,7 @@ class TestCacheCommandSuccess:
         self, tmp_path: Path, mock_figma_response: dict[str, Any]
     ) -> None:
         """複数ファイルのキャッシュ"""
-        with patch("yet_another_figma_mcp.cli.FigmaClient") as mock_client_class:
+        with patch("yet_another_figma_mcp.cli.cache.FigmaClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client.get_file.return_value = mock_figma_response
             mock_client.__enter__ = MagicMock(return_value=mock_client)
@@ -135,7 +135,7 @@ class TestCacheCommandSuccess:
         self, tmp_path: Path, mock_figma_response: dict[str, Any]
     ) -> None:
         """複数ファイルキャッシュ時に進捗表示される"""
-        with patch("yet_another_figma_mcp.cli.FigmaClient") as mock_client_class:
+        with patch("yet_another_figma_mcp.cli.cache.FigmaClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client.get_file.return_value = mock_figma_response
             mock_client.__enter__ = MagicMock(return_value=mock_client)
@@ -157,7 +157,7 @@ class TestCacheCommandSuccess:
         self, tmp_path: Path, mock_figma_response: dict[str, Any]
     ) -> None:
         """キャッシュ時にタイムスタンプを含むメタデータが保存される"""
-        with patch("yet_another_figma_mcp.cli.FigmaClient") as mock_client_class:
+        with patch("yet_another_figma_mcp.cli.cache.FigmaClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client.get_file.return_value = mock_figma_response
             mock_client.__enter__ = MagicMock(return_value=mock_client)
@@ -191,7 +191,7 @@ class TestCacheCommandSuccess:
         file_list = tmp_path / "files.txt"
         file_list.write_text("file1\n# comment\nfile2\n\nfile3\n")
 
-        with patch("yet_another_figma_mcp.cli.FigmaClient") as mock_client_class:
+        with patch("yet_another_figma_mcp.cli.cache.FigmaClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client.get_file.return_value = mock_figma_response
             mock_client.__enter__ = MagicMock(return_value=mock_client)
@@ -212,7 +212,7 @@ class TestCacheCommandSuccess:
         cache_dir.mkdir()
         (cache_dir / "file_raw.json").write_text("{}")
 
-        with patch("yet_another_figma_mcp.cli.FigmaClient") as mock_client_class:
+        with patch("yet_another_figma_mcp.cli.cache.FigmaClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client.__enter__ = MagicMock(return_value=mock_client)
             mock_client.__exit__ = MagicMock(return_value=False)
@@ -234,7 +234,7 @@ class TestCacheCommandSuccess:
         cache_dir.mkdir()
         (cache_dir / "file_raw.json").write_text('{"name": "Old"}')
 
-        with patch("yet_another_figma_mcp.cli.FigmaClient") as mock_client_class:
+        with patch("yet_another_figma_mcp.cli.cache.FigmaClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client.get_file.return_value = mock_figma_response
             mock_client.__enter__ = MagicMock(return_value=mock_client)
@@ -257,7 +257,7 @@ class TestCacheCommandErrors:
 
     def test_authentication_error(self, tmp_path: Path) -> None:
         """認証エラー"""
-        with patch("yet_another_figma_mcp.cli.FigmaClient") as mock_client_class:
+        with patch("yet_another_figma_mcp.cli.cache.FigmaClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client.get_file.side_effect = FigmaAuthenticationError()
             mock_client.__enter__ = MagicMock(return_value=mock_client)
@@ -271,7 +271,7 @@ class TestCacheCommandErrors:
 
     def test_file_not_found_error(self, tmp_path: Path) -> None:
         """ファイル未存在エラー"""
-        with patch("yet_another_figma_mcp.cli.FigmaClient") as mock_client_class:
+        with patch("yet_another_figma_mcp.cli.cache.FigmaClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client.get_file.side_effect = FigmaFileNotFoundError("abc123")
             mock_client.__enter__ = MagicMock(return_value=mock_client)
@@ -285,7 +285,7 @@ class TestCacheCommandErrors:
 
     def test_rate_limit_error(self, tmp_path: Path) -> None:
         """レート制限エラー"""
-        with patch("yet_another_figma_mcp.cli.FigmaClient") as mock_client_class:
+        with patch("yet_another_figma_mcp.cli.cache.FigmaClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client.get_file.side_effect = FigmaRateLimitError(retry_after=60)
             mock_client.__enter__ = MagicMock(return_value=mock_client)
@@ -300,7 +300,7 @@ class TestCacheCommandErrors:
 
     def test_partial_failure(self, tmp_path: Path, mock_figma_response: dict[str, Any]) -> None:
         """一部失敗時のサマリー"""
-        with patch("yet_another_figma_mcp.cli.FigmaClient") as mock_client_class:
+        with patch("yet_another_figma_mcp.cli.cache.FigmaClient") as mock_client_class:
             mock_client = MagicMock()
             # 1つ目は成功、2つ目は失敗
             mock_client.get_file.side_effect = [
