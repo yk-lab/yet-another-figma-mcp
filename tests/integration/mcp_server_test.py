@@ -243,7 +243,7 @@ class TestMCPServerCallTool:
         assert len(result.content) == 1
         data = json.loads(result.content[0].text)
         assert data["error"] == "unknown_tool"
-        assert "Unknown tool" in data["message"]
+        assert "不明なツールです（unknown_tool）" in data["message"]
 
 
 class TestMCPServerToolCallsDirect:

@@ -199,7 +199,7 @@ def create_server() -> Server:
             elif name == "list_figma_frames":
                 result = list_figma_frames(store, arguments["file_id"])
             else:
-                result = {"error": "unknown_tool", "message": f"Unknown tool: {name}"}
+                result = {"error": "unknown_tool", "message": f"不明なツールです（{name}）"}
 
             return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
         except Exception as e:
