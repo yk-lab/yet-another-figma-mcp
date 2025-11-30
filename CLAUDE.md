@@ -58,11 +58,20 @@ uv sync --group dev
 # Run all tests
 uv run pytest
 
+# Run tests in parallel (faster for large test suites)
+uv run pytest -n auto
+
 # Run a single test file
 uv run pytest tests/cache/store_test.py
 
 # Run a specific test function
 uv run pytest tests/cache/store_test.py::TestCacheStore::test_cache_store_loads_from_disk
+
+# Detect flaky tests (run each test multiple times)
+uv run pytest --flake-finder --flake-runs=10
+
+# Reproduce test order from a specific random seed
+uv run pytest --randomly-seed=<seed>
 
 # Type checking
 uv run pyright
