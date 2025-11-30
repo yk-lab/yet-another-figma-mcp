@@ -57,7 +57,14 @@ uv run pyright
 ### テスト
 
 ```bash
+# 通常のテスト実行
 uv run pytest
+
+# 並列実行 (テスト数が多い場合に高速)
+uv run pytest -n auto
+
+# フレーキーテストの検出
+uv run pytest --flake-finder --flake-runs=10
 ```
 
 ### コミット前のチェック
