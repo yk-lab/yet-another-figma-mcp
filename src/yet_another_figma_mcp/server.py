@@ -165,7 +165,11 @@ def create_server() -> Server:
 
     @server.call_tool()
     async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
-        """MCP ツールを呼び出す"""
+        """MCP ツールを呼び出す
+
+        Note: MCP SDK がスキーマバリデーションを行うため、必須引数の不足は
+        このハンドラに到達する前に SDK によって処理される。
+        """
         try:
             store = get_store()
             result: dict[str, Any] | list[dict[str, Any]]
@@ -198,21 +202,12 @@ def create_server() -> Server:
                 result = {"error": "unknown_tool", "message": f"Unknown tool: {name}"}
 
             return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
-        except KeyError as e:
-            # 必須引数が不足している場合
-            logger.warning("Missing required argument: %s for tool %s", e, name)
-            result = {
-                "error": "missing_argument",
-                "message": f"必須引数が不足しています: {e}",
-                "tool": name,
-            }
-            return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
         except Exception as e:
             # 予期しないエラーをキャッチしてサーバークラッシュを防止
             logger.exception("Unexpected error in tool %s: %s", name, e)
             result = {
                 "error": "internal_error",
-                "message": f"ツール実行中に予期しないエラーが発生しました: {type(e).__name__}",
+                "message": f"ツール実行中に予期しないエラーが発生しました（{type(e).__name__}）",
                 "tool": name,
             }
             return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
