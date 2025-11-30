@@ -71,7 +71,7 @@ uv run pytest tests/cache/store_test.py::TestCacheStore::test_cache_store_loads_
 uv run pytest --flake-finder --flake-runs=10
 
 # Reproduce test order from a specific random seed
-uv run pytest -p randomly --randomly-seed=<seed>
+uv run pytest --randomly-seed=<seed>
 
 # Type checking
 uv run pyright
