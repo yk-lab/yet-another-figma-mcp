@@ -2,6 +2,53 @@
 
 This file provides guidance to Claude Code when working with code in this repository.
 
+## Environment Variables
+
+- **`FIGMA_API_TOKEN`** (必須): Figma API の Personal Access Token。`cache` コマンドで Figma API にアクセスする際に必要
+
+```bash
+export FIGMA_API_TOKEN="figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+## Cache Directory
+
+キャッシュデータはデフォルトで `~/.yet_another_figma_mcp/` に保存される。
+
+```text
+~/.yet_another_figma_mcp/
+└── <file_id>/
+    ├── file_raw.json      # Figma API レスポンス (生データ)
+    ├── nodes_index.json   # 検索用インデックス
+    └── cache_meta.json    # キャッシュメタデータ (タイムスタンプ)
+```
+
+`--cache-dir` オプションで変更可能。
+
+## CLI Commands
+
+```bash
+# Figma ファイルをキャッシュ (単一ファイル)
+yet-another-figma-mcp cache -f <file_id>
+
+# 複数ファイルをキャッシュ
+yet-another-figma-mcp cache -f <file_id_1> -f <file_id_2>
+
+# ファイルリストからキャッシュ
+yet-another-figma-mcp cache -l file_ids.txt
+
+# キャッシュを強制更新
+yet-another-figma-mcp cache -f <file_id> --refresh
+
+# キャッシュ状態を確認
+yet-another-figma-mcp status
+
+# MCP サーバーを起動
+yet-another-figma-mcp serve
+
+# 詳細ログ付きで起動
+yet-another-figma-mcp serve --verbose
+```
+
 ## Build and Development Commands
 
 ```bash
@@ -80,7 +127,7 @@ Figma MCP サーバーで、Figma 無料プランの API 制限 (月 6 回) を�
 
 Conventional Commits 形式：
 
-```
+```text
 feat: 新機能の追加
 fix: バグ修正
 docs: ドキュメント更新
