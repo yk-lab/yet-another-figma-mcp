@@ -87,16 +87,55 @@ uv run pytest
 1. リント・型チェック・テストがパスすることを確認
 1. プルリクエストを作成
 
-### コミットメッセージ
+### コミットメッセージ（Conventional Commits）
 
-意味のある簡潔なコミットメッセージを書いてください:
+本プロジェクトでは [Conventional Commits](https://www.conventionalcommits.org/) 形式を採用しています。
+これにより、[Release Please](https://github.com/googleapis/release-please) による自動リリースが可能になります。
 
+#### フォーマット
+
+```text
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
 ```
+
+#### タイプ一覧
+
+| タイプ     | 説明                                                 | リリースへの影響         |
+| ---------- | ---------------------------------------------------- | ------------------------ |
+| `feat`     | 新機能の追加                                         | マイナーバージョンアップ |
+| `fix`      | バグ修正                                             | パッチバージョンアップ   |
+| `docs`     | ドキュメントのみの変更                               | リリースなし             |
+| `style`    | コードの意味に影響しない変更（空白、フォーマット等） | リリースなし             |
+| `refactor` | バグ修正でも機能追加でもないコード変更               | リリースなし             |
+| `perf`     | パフォーマンス改善                                   | パッチバージョンアップ   |
+| `test`     | テストの追加・修正                                   | リリースなし             |
+| `chore`    | ビルドプロセスやツールの変更                         | リリースなし             |
+| `ci`       | CI 設定の変更                                        | リリースなし             |
+| `security` | セキュリティ修正                                     | パッチバージョンアップ   |
+
+#### 破壊的変更
+
+破壊的変更がある場合は `!` を追加するか、フッターに `BREAKING CHANGE:` を記述します：
+
+```text
+feat!: API の互換性を破壊する変更
+
+BREAKING CHANGE: get_cached_figma_file の戻り値の構造が変更されました
+```
+
+#### 例
+
+```text
 feat: ノード検索機能を追加
 fix: キャッシュ読み込み時のエラーを修正
 docs: README にセットアップ手順を追加
 refactor: CacheStore クラスを整理
 test: search_figma_nodes_by_name のテストを追加
+ci: Release Please ワークフローを追加
 ```
 
 ## ディレクトリ構造
