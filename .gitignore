@@ -63,3 +63,7 @@ src/yet_another_figma_mcp/_version.py
 # OS
 .DS_Store
 Thumbs.db
+
+# Real Figma API responses (too large for git, use sample_design_system.json for tests)
+tests/fixtures/figma_file_*.json
+!tests/fixtures/sample_design_system.json
