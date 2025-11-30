@@ -207,7 +207,7 @@ class TestStatusCommand:
         with open(valid_dir / "file_raw.json", "w") as f:
             json.dump(sample_figma_file, f)
 
-        # 不正なディレクトリ名（パストラバーサル）
+        # 不正なディレクトリ名 (パストラバーサル)
         invalid_dir = tmp_path / "..invalid"
         invalid_dir.mkdir(parents=True)
         with open(invalid_dir / "file_raw.json", "w") as f:
@@ -229,7 +229,7 @@ class TestStatusCommand:
         with open(valid_dir / "file_raw.json", "w") as f:
             json.dump(sample_figma_file, f)
 
-        # 通常のファイル（ディレクトリではない）
+        # 通常のファイル (ディレクトリではない)
         (tmp_path / "somefile.txt").write_text("not a directory")
 
         result = runner.invoke(app, ["status", "--cache-dir", str(tmp_path), "--json"])
@@ -280,7 +280,7 @@ class TestStatusCommand:
     def test_status_handles_corrupted_meta_json(
         self, tmp_path: Path, sample_figma_file: dict[str, Any]
     ) -> None:
-        """破損したメタデータ JSON でもファイルは表示される（mtime 使用）"""
+        """破損したメタデータ JSON でもファイルは表示される (mtime 使用)"""
         file_dir = tmp_path / "abc123"
         file_dir.mkdir(parents=True)
 
@@ -321,7 +321,7 @@ class TestStatusCommand:
     def test_status_handles_invalid_datetime_format(
         self, tmp_path: Path, sample_figma_file: dict[str, Any]
     ) -> None:
-        """不正な日時形式でもファイルは表示される（テーブル出力で確認）"""
+        """不正な日時形式でもファイルは表示される (テーブル出力で確認)"""
         file_dir = tmp_path / "abc123"
         file_dir.mkdir(parents=True)
 
@@ -332,7 +332,7 @@ class TestStatusCommand:
         with open(file_dir / "cache_meta.json", "w") as f:
             json.dump({"cached_at": "not-a-valid-date"}, f)
 
-        # テーブル出力で実行（_format_datetime が呼ばれる）
+        # テーブル出力で実行 (_format_datetime が呼ばれる)
         result = runner.invoke(app, ["status", "--cache-dir", str(tmp_path)])
 
         assert result.exit_code == 0

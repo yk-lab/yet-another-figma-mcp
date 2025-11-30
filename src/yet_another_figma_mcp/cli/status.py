@@ -33,7 +33,7 @@ def _get_cached_files_info(cache_dir: Path) -> list[dict[str, object]]:
 
         file_id = file_dir.name
 
-        # file_id のバリデーション（不正なディレクトリ名をスキップ）
+        # file_id のバリデーション (不正なディレクトリ名をスキップ)
         try:
             validate_file_id(file_id)
         except InvalidFileIdError:
@@ -131,7 +131,7 @@ def status(
         console.print(f"[yellow]キャッシュが見つかりません: {target_cache_dir}[/yellow]")
         return
 
-    table = Table(title=f"キャッシュ済みファイル ({target_cache_dir})")
+    table = Table(title=f"キャッシュ済みファイル（{target_cache_dir}）")
     table.add_column("File ID", style="cyan", no_wrap=True)
     table.add_column("Name", style="green")
     table.add_column("Cached At", style="yellow")
