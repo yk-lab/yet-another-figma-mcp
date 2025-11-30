@@ -1,5 +1,6 @@
 """serve コマンドのテスト"""
 
+import signal
 from pathlib import Path
 from unittest.mock import patch
 
@@ -101,3 +102,53 @@ class TestServeCommandSignalHandling:
 
         # KeyboardInterrupt で正常終了
         assert result.exit_code == 0
+
+    def test_serve_registers_sigterm_handler(self, tmp_path: Path) -> None:
+        """SIGTERM ハンドラが登録される"""
+        registered_handler = None
+
+        def capture_signal(signum: int, handler: object) -> None:
+            nonlocal registered_handler
+            if signum == signal.SIGTERM:
+                registered_handler = handler
+
+        with (
+            patch("yet_another_figma_mcp.cli.serve.asyncio.run") as mock_asyncio_run,
+            patch("yet_another_figma_mcp.server.set_cache_dir"),
+            patch("yet_another_figma_mcp.cli.serve.signal.signal", side_effect=capture_signal),
+        ):
+            mock_asyncio_run.return_value = None
+
+            result = runner.invoke(app, ["serve", "-d", str(tmp_path)])
+
+        assert result.exit_code == 0
+        assert registered_handler is not None
+
+    def test_sigterm_handler_calls_sys_exit(self, tmp_path: Path) -> None:
+        """SIGTERM ハンドラが sys.exit(0) を呼び出す"""
+        registered_handler = None
+
+        original_signal = signal.signal
+
+        def capture_signal(signum: int, handler: object) -> object:
+            nonlocal registered_handler
+            if signum == signal.SIGTERM:
+                registered_handler = handler
+            return original_signal(signum, handler)  # type: ignore[arg-type]
+
+        with (
+            patch("yet_another_figma_mcp.cli.serve.asyncio.run") as mock_asyncio_run,
+            patch("yet_another_figma_mcp.server.set_cache_dir"),
+            patch("yet_another_figma_mcp.cli.serve.signal.signal", side_effect=capture_signal),
+        ):
+            mock_asyncio_run.return_value = None
+
+            result = runner.invoke(app, ["serve", "-d", str(tmp_path)])
+
+        assert result.exit_code == 0
+        assert registered_handler is not None
+
+        # ハンドラを呼び出して sys.exit(0) が呼ばれることを確認
+        with patch("yet_another_figma_mcp.cli.serve.sys.exit") as mock_exit:
+            registered_handler(signal.SIGTERM, None)  # type: ignore[operator]
+            mock_exit.assert_called_once_with(0)
