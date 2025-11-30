@@ -5,9 +5,17 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from mcp.types import CallToolRequest, CallToolRequestParams, ListToolsRequest
 
 from yet_another_figma_mcp.cache.index import build_index, save_index
 from yet_another_figma_mcp.server import create_server, get_store, set_cache_dir
+from yet_another_figma_mcp.tools import (
+    get_cached_figma_file,
+    get_cached_figma_node,
+    list_figma_frames,
+    search_figma_frames_by_title,
+    search_figma_nodes_by_name,
+)
 
 
 @pytest.fixture
@@ -46,14 +54,203 @@ class TestMCPServerSetup:
         assert server is not None
 
 
+class TestMCPServerListTools:
+    """MCP サーバーの list_tools テスト"""
+
+    @pytest.mark.asyncio
+    async def test_list_tools_returns_all_five_tools(
+        self, server_with_cache: tuple[Any, str]
+    ) -> None:
+        """list_tools は 5 つのツールのみを返す"""
+        server, _ = server_with_cache
+
+        # request_handlers から ListToolsRequest ハンドラーを取得
+        list_tools_handler = server.request_handlers[ListToolsRequest]
+        server_result = await list_tools_handler(ListToolsRequest(method="tools/list"))
+        tools_result = server_result.root
+
+        tool_names = {tool.name for tool in tools_result.tools}
+        expected_tools = {
+            "get_cached_figma_file",
+            "get_cached_figma_node",
+            "search_figma_nodes_by_name",
+            "search_figma_frames_by_title",
+            "list_figma_frames",
+        }
+
+        assert tool_names == expected_tools
+        assert len(tools_result.tools) == 5
+
+    @pytest.mark.asyncio
+    async def test_list_tools_have_required_schema(
+        self, server_with_cache: tuple[Any, str]
+    ) -> None:
+        """各ツールに必須パラメータスキーマがある"""
+        server, _ = server_with_cache
+
+        list_tools_handler = server.request_handlers[ListToolsRequest]
+        server_result = await list_tools_handler(ListToolsRequest(method="tools/list"))
+        tools_result = server_result.root
+
+        for tool in tools_result.tools:
+            assert tool.inputSchema is not None
+            assert "properties" in tool.inputSchema
+            assert "required" in tool.inputSchema
+            # 全ツールで file_id は必須
+            assert "file_id" in tool.inputSchema["required"]
+
+
+class TestMCPServerCallTool:
+    """MCP サーバーの call_tool テスト"""
+
+    @pytest.mark.asyncio
+    async def test_call_tool_get_cached_figma_file(
+        self, server_with_cache: tuple[Any, str]
+    ) -> None:
+        """call_tool 経由で get_cached_figma_file を呼び出し"""
+        server, file_id = server_with_cache
+
+        call_tool_handler = server.request_handlers[CallToolRequest]
+        server_result = await call_tool_handler(
+            CallToolRequest(
+                method="tools/call",
+                params=CallToolRequestParams(
+                    name="get_cached_figma_file", arguments={"file_id": file_id}
+                ),
+            )
+        )
+        result = server_result.root
+
+        assert len(result.content) == 1
+        data = json.loads(result.content[0].text)
+        assert "error" not in data
+        assert data["name"] == "Design System"
+
+    @pytest.mark.asyncio
+    async def test_call_tool_get_cached_figma_node(
+        self, server_with_cache: tuple[Any, str]
+    ) -> None:
+        """call_tool 経由で get_cached_figma_node を呼び出し"""
+        server, file_id = server_with_cache
+
+        call_tool_handler = server.request_handlers[CallToolRequest]
+        server_result = await call_tool_handler(
+            CallToolRequest(
+                method="tools/call",
+                params=CallToolRequestParams(
+                    name="get_cached_figma_node",
+                    arguments={"file_id": file_id, "node_id": "1:2"},
+                ),
+            )
+        )
+        result = server_result.root
+
+        assert len(result.content) == 1
+        data = json.loads(result.content[0].text)
+        assert "error" not in data
+        assert data["name"] == "Primary Button"
+        assert data["type"] == "COMPONENT"
+
+    @pytest.mark.asyncio
+    async def test_call_tool_search_figma_nodes_by_name(
+        self, server_with_cache: tuple[Any, str]
+    ) -> None:
+        """call_tool 経由で search_figma_nodes_by_name を呼び出し"""
+        server, file_id = server_with_cache
+
+        call_tool_handler = server.request_handlers[CallToolRequest]
+        server_result = await call_tool_handler(
+            CallToolRequest(
+                method="tools/call",
+                params=CallToolRequestParams(
+                    name="search_figma_nodes_by_name",
+                    arguments={"file_id": file_id, "name": "Button", "match_mode": "partial"},
+                ),
+            )
+        )
+        result = server_result.root
+
+        assert len(result.content) == 1
+        data: list[dict[str, Any]] = json.loads(result.content[0].text)
+        assert isinstance(data, list)
+        assert len(data) >= 3
+
+    @pytest.mark.asyncio
+    async def test_call_tool_search_figma_frames_by_title(
+        self, server_with_cache: tuple[Any, str]
+    ) -> None:
+        """call_tool 経由で search_figma_frames_by_title を呼び出し"""
+        server, file_id = server_with_cache
+
+        call_tool_handler = server.request_handlers[CallToolRequest]
+        server_result = await call_tool_handler(
+            CallToolRequest(
+                method="tools/call",
+                params=CallToolRequestParams(
+                    name="search_figma_frames_by_title",
+                    arguments={"file_id": file_id, "title": "Login", "match_mode": "partial"},
+                ),
+            )
+        )
+        result = server_result.root
+
+        assert len(result.content) == 1
+        data: list[dict[str, Any]] = json.loads(result.content[0].text)
+        assert isinstance(data, list)
+        frame_names = [f["name"] for f in data]
+        assert "Login Screen" in frame_names
+
+    @pytest.mark.asyncio
+    async def test_call_tool_list_figma_frames(self, server_with_cache: tuple[Any, str]) -> None:
+        """call_tool 経由で list_figma_frames を呼び出し"""
+        server, file_id = server_with_cache
+
+        call_tool_handler = server.request_handlers[CallToolRequest]
+        server_result = await call_tool_handler(
+            CallToolRequest(
+                method="tools/call",
+                params=CallToolRequestParams(
+                    name="list_figma_frames", arguments={"file_id": file_id}
+                ),
+            )
+        )
+        result = server_result.root
+
+        assert len(result.content) == 1
+        data: list[dict[str, Any]] = json.loads(result.content[0].text)
+        assert isinstance(data, list)
+        frame_names = [f["name"] for f in data]
+        assert "Buttons" in frame_names
+        assert "Login Screen" in frame_names
+
+    @pytest.mark.asyncio
+    async def test_call_tool_unknown_tool_returns_error(
+        self, server_with_cache: tuple[Any, str]
+    ) -> None:
+        """存在しないツールを呼び出すとエラー"""
+        server, file_id = server_with_cache
+
+        call_tool_handler = server.request_handlers[CallToolRequest]
+        server_result = await call_tool_handler(
+            CallToolRequest(
+                method="tools/call",
+                params=CallToolRequestParams(name="unknown_tool", arguments={"file_id": file_id}),
+            )
+        )
+        result = server_result.root
+
+        assert len(result.content) == 1
+        data = json.loads(result.content[0].text)
+        assert "error" in data
+        assert "Unknown tool" in data["error"]
+
+
 class TestMCPServerToolCallsDirect:
     """MCP サーバーのツール呼び出しテスト (直接呼び出し)"""
 
     def test_get_cached_figma_file_direct(self, server_with_cache: tuple[Any, str]) -> None:
         """get_cached_figma_file の直接呼び出し"""
         _, file_id = server_with_cache
-
-        from yet_another_figma_mcp.tools import get_cached_figma_file
 
         store = get_store()
         result = get_cached_figma_file(store, file_id)
@@ -64,8 +261,6 @@ class TestMCPServerToolCallsDirect:
     def test_get_cached_figma_node_direct(self, server_with_cache: tuple[Any, str]) -> None:
         """get_cached_figma_node の直接呼び出し"""
         _, file_id = server_with_cache
-
-        from yet_another_figma_mcp.tools import get_cached_figma_node
 
         store = get_store()
         result = get_cached_figma_node(store, file_id, "1:2")
@@ -78,8 +273,6 @@ class TestMCPServerToolCallsDirect:
         """search_figma_nodes_by_name の直接呼び出し"""
         _, file_id = server_with_cache
 
-        from yet_another_figma_mcp.tools import search_figma_nodes_by_name
-
         store = get_store()
         results = search_figma_nodes_by_name(store, file_id, name="Button", match_mode="partial")
 
@@ -90,8 +283,6 @@ class TestMCPServerToolCallsDirect:
     ) -> None:
         """ignore_case オプション付きの検索"""
         _, file_id = server_with_cache
-
-        from yet_another_figma_mcp.tools import search_figma_nodes_by_name
 
         store = get_store()
         results = search_figma_nodes_by_name(
@@ -104,8 +295,6 @@ class TestMCPServerToolCallsDirect:
         """search_figma_frames_by_title の直接呼び出し"""
         _, file_id = server_with_cache
 
-        from yet_another_figma_mcp.tools import search_figma_frames_by_title
-
         store = get_store()
         results = search_figma_frames_by_title(store, file_id, title="Login", match_mode="partial")
 
@@ -115,8 +304,6 @@ class TestMCPServerToolCallsDirect:
     def test_list_figma_frames_direct(self, server_with_cache: tuple[Any, str]) -> None:
         """list_figma_frames の直接呼び出し"""
         _, file_id = server_with_cache
-
-        from yet_another_figma_mcp.tools import list_figma_frames
 
         store = get_store()
         results = list_figma_frames(store, file_id)
@@ -131,7 +318,7 @@ class TestMCPServerErrorHandlingDirect:
 
     def test_nonexistent_file_returns_error(self, server_with_cache: tuple[Any, str]) -> None:
         """存在しないファイルへのアクセスはエラー"""
-        from yet_another_figma_mcp.tools import get_cached_figma_file
+        _ = server_with_cache  # fixture でキャッシュディレクトリを設定
 
         store = get_store()
         result = get_cached_figma_file(store, "nonexistent")
@@ -142,8 +329,6 @@ class TestMCPServerErrorHandlingDirect:
         """存在しないノードへのアクセスはエラー"""
         _, file_id = server_with_cache
 
-        from yet_another_figma_mcp.tools import get_cached_figma_node
-
         store = get_store()
         result = get_cached_figma_node(store, file_id, "999:999")
 
@@ -151,7 +336,7 @@ class TestMCPServerErrorHandlingDirect:
 
     def test_invalid_file_id_returns_error(self, server_with_cache: tuple[Any, str]) -> None:
         """無効なファイル ID はエラー"""
-        from yet_another_figma_mcp.tools import get_cached_figma_file
+        _ = server_with_cache  # fixture でキャッシュディレクトリを設定
 
         store = get_store()
         result = get_cached_figma_file(store, "../invalid")

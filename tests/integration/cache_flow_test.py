@@ -105,7 +105,7 @@ class TestCacheFlowIntegration:
         assert len(results) >= 3
 
     def test_full_flow_search_by_name_multibyte(self, setup_cache: tuple[CacheStore, str]) -> None:
-        """マルチバイト文字（日本語）での検索フロー"""
+        """マルチバイト文字 (日本語) での検索フロー"""
         store, file_id = setup_cache
 
         # 日本語名の完全一致検索
@@ -124,7 +124,7 @@ class TestCacheFlowIntegration:
     def test_full_flow_search_frames_by_title_multibyte(
         self, setup_cache: tuple[CacheStore, str]
     ) -> None:
-        """マルチバイト文字（日本語）でのフレーム検索フロー"""
+        """マルチバイト文字 (日本語) でのフレーム検索フロー"""
         store, file_id = setup_cache
 
         results = search_figma_frames_by_title(
