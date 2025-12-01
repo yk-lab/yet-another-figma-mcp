@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/yk-lab/yet-another-figma-mcp/compare/v0.1.1...v0.1.2) (2025-12-01)
+
+
+### Bug Fixes
+
+* integrate PyPI publish into release-please workflow ([#63](https://github.com/yk-lab/yet-another-figma-mcp/issues/63)) ([f5d546d](https://github.com/yk-lab/yet-another-figma-mcp/commit/f5d546dc55913ca66048f206c19800f9bd180c0a))
+
 ## [0.1.1](https://github.com/yk-lab/yet-another-figma-mcp/compare/v0.1.0...v0.1.1) (2025-11-30)
 
 
