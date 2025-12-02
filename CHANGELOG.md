@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/yk-lab/yet-another-figma-mcp/compare/v0.1.2...v0.1.3) (2025-12-02)
+
+
+### Bug Fixes
+
+* improve MCP tool definitions for better LLM compatibility ([#69](https://github.com/yk-lab/yet-another-figma-mcp/issues/69)) ([fa451b8](https://github.com/yk-lab/yet-another-figma-mcp/commit/fa451b891c3b5cd866cba8e7c8e4221931ff3115))
+
 ## [0.1.2](https://github.com/yk-lab/yet-another-figma-mcp/compare/v0.1.1...v0.1.2) (2025-12-01)
 
 
