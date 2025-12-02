@@ -6,23 +6,26 @@ from yet_another_figma_mcp.cache import CacheStore, InvalidFileIdError, validate
 
 
 def _handle_invalid_file_id(file_id: str) -> dict[str, Any]:
-    """無効な file_id のエラーレスポンスを生成"""
+    """Generate error response for invalid file_id"""
     return {
         "error": "invalid_file_id",
-        "message": f"無効なファイル ID: '{file_id}'",
+        "message": (
+            f"Invalid file ID: '{file_id}'. "
+            "File ID should contain only letters, numbers, underscores, and hyphens."
+        ),
         "file_id": file_id,
     }
 
 
 def get_cached_figma_file(store: CacheStore, file_id: str) -> dict[str, Any]:
-    """指定ファイルのノードツリーやメタデータを取得
+    """Get Figma file metadata and frame list
 
     Args:
-        store: キャッシュストア
-        file_id: Figma ファイル ID
+        store: Cache store
+        file_id: Figma file ID
 
     Returns:
-        ファイルメタデータとフレーム一覧。エラー時は error フィールドを含む
+        File metadata and frame list. Contains 'error' field on error.
     """
     try:
         validate_file_id(file_id)
@@ -33,7 +36,10 @@ def get_cached_figma_file(store: CacheStore, file_id: str) -> dict[str, Any]:
     if not index:
         return {
             "error": "file_not_found",
-            "message": f"ファイル '{file_id}' がキャッシュに見つかりません",
+            "message": (
+                f"File '{file_id}' not found in cache. "
+                f"Run 'yet-another-figma-mcp cache -f {file_id}' to cache it first."
+            ),
             "file_id": file_id,
         }
 
@@ -41,15 +47,16 @@ def get_cached_figma_file(store: CacheStore, file_id: str) -> dict[str, Any]:
     if not file_data:
         return {
             "error": "file_data_missing",
-            "message": f"ファイル '{file_id}' のデータが見つかりません",
+            "message": f"File data for '{file_id}' is missing from cache.",
             "file_id": file_id,
         }
 
-    # ルートノードと主要フレーム一覧を返す
+    # Return file metadata and main frame list
     frames: list[dict[str, Any]] = []
     for node_id, node_info in index.get("by_id", {}).items():
         if node_info.get("type") == "FRAME":
-            # 浅い階層のフレームのみ（ページ直下など）
+            # Include frames up to depth 3 (Document > Page > Frame or shallower)
+            # This captures top-level frames and allows for edge cases
             if len(node_info.get("path", [])) <= 3:
                 frames.append(
                     {
@@ -69,15 +76,15 @@ def get_cached_figma_file(store: CacheStore, file_id: str) -> dict[str, Any]:
 
 
 def get_cached_figma_node(store: CacheStore, file_id: str, node_id: str) -> dict[str, Any]:
-    """単一ノードの詳細情報を取得
+    """Get detailed information for a specific node
 
     Args:
-        store: キャッシュストア
-        file_id: Figma ファイル ID
-        node_id: ノード ID
+        store: Cache store
+        file_id: Figma file ID
+        node_id: Node ID
 
     Returns:
-        ノードの詳細情報。エラー時は error フィールドを含む
+        Node details. Contains 'error' field on error.
     """
     try:
         validate_file_id(file_id)
@@ -88,12 +95,15 @@ def get_cached_figma_node(store: CacheStore, file_id: str, node_id: str) -> dict
     if not file_data:
         return {
             "error": "file_not_found",
-            "message": f"ファイル '{file_id}' がキャッシュに見つかりません",
+            "message": (
+                f"File '{file_id}' not found in cache. "
+                f"Run 'yet-another-figma-mcp cache -f {file_id}' to cache it first."
+            ),
             "file_id": file_id,
         }
 
     def find_node(node: dict[str, Any], target_id: str) -> dict[str, Any] | None:
-        """ノードツリーから指定 ID のノードを再帰的に検索"""
+        """Recursively search for a node by ID in the node tree"""
         if node.get("id") == target_id:
             return node
         for child in node.get("children", []):
@@ -108,7 +118,7 @@ def get_cached_figma_node(store: CacheStore, file_id: str, node_id: str) -> dict
     if not result:
         return {
             "error": "node_not_found",
-            "message": f"ノード '{node_id}' が見つかりません",
+            "message": f"Node '{node_id}' not found in file '{file_id}'.",
             "file_id": file_id,
             "node_id": node_id,
         }
@@ -124,19 +134,19 @@ def search_figma_nodes_by_name(
     limit: int | None = None,
     ignore_case: bool = False,
 ) -> list[dict[str, Any]]:
-    """ノード名でノードを検索
+    """Search nodes by name
 
     Args:
-        store: キャッシュストア
-        file_id: Figma ファイル ID
-        name: 検索するノード名
-        match_mode: マッチモード ("exact" or "partial")
-        limit: 最大取得件数
-        ignore_case: exact モード時に大文字小文字を区別しない (デフォルト: False)。
-            partial モードは常に大文字小文字を無視
+        store: Cache store
+        file_id: Figma file ID
+        name: Node name to search for
+        match_mode: Match mode ("exact" or "partial")
+        limit: Maximum number of results
+        ignore_case: Case-insensitive matching for exact mode (default: False).
+            Partial mode is always case-insensitive.
 
     Returns:
-        マッチしたノードのリスト
+        List of matching nodes
     """
     try:
         validate_file_id(file_id)
@@ -166,7 +176,7 @@ def search_figma_nodes_by_name(
                 node_info = by_id.get(node_id, {})
                 results.append({"id": node_id, **node_info})
     else:
-        # partial match (常に大文字小文字を無視)
+        # partial match (always case-insensitive)
         name_lower = name.lower()
         for node_name, node_ids in by_name.items():
             if name_lower in node_name.lower():
@@ -174,7 +184,7 @@ def search_figma_nodes_by_name(
                     node_info = by_id.get(node_id, {})
                     results.append({"id": node_id, **node_info})
 
-    if limit:
+    if limit is not None:
         results = results[:limit]
 
     return results
@@ -188,19 +198,19 @@ def search_figma_frames_by_title(
     limit: int | None = None,
     ignore_case: bool = False,
 ) -> list[dict[str, Any]]:
-    """フレーム名からフレームノードを検索
+    """Search frame nodes by title
 
     Args:
-        store: キャッシュストア
-        file_id: Figma ファイル ID
-        title: 検索するフレーム名
-        match_mode: マッチモード ("exact" or "partial")
-        limit: 最大取得件数
-        ignore_case: exact モード時に大文字小文字を区別しない (デフォルト: False)。
-            partial モードは常に大文字小文字を無視
+        store: Cache store
+        file_id: Figma file ID
+        title: Frame title to search for
+        match_mode: Match mode ("exact" or "partial")
+        limit: Maximum number of results
+        ignore_case: Case-insensitive matching for exact mode (default: False).
+            Partial mode is always case-insensitive.
 
     Returns:
-        マッチしたフレームノードのリスト
+        List of matching frame nodes
     """
     try:
         validate_file_id(file_id)
@@ -230,7 +240,7 @@ def search_figma_frames_by_title(
                 node_info = by_id.get(node_id, {})
                 results.append({"id": node_id, **node_info})
     else:
-        # partial match (常に大文字小文字を無視)
+        # partial match (always case-insensitive)
         title_lower = title.lower()
         for frame_title, node_ids in by_frame_title.items():
             if title_lower in frame_title.lower():
@@ -238,14 +248,14 @@ def search_figma_frames_by_title(
                     node_info = by_id.get(node_id, {})
                     results.append({"id": node_id, **node_info})
 
-    if limit:
+    if limit is not None:
         results = results[:limit]
 
     return results
 
 
 def list_figma_frames(store: CacheStore, file_id: str) -> list[dict[str, Any]]:
-    """ファイル直下の主要フレーム一覧を取得"""
+    """List top-level frames in the file"""
     try:
         validate_file_id(file_id)
     except InvalidFileIdError:
@@ -260,7 +270,7 @@ def list_figma_frames(store: CacheStore, file_id: str) -> list[dict[str, Any]]:
 
     for node_id, node_info in by_id.items():
         if node_info.get("type") == "FRAME":
-            # ページ直下のフレームのみ（path が短いもの）
+            # Only page-level frames (short path)
             path = node_info.get("path", [])
             if len(path) == 3:  # Document > Page > Frame
                 results.append(
