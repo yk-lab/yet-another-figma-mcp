@@ -47,17 +47,25 @@ def create_server() -> Server:
 
     @server.list_tools()
     async def list_tools() -> list[Tool]:
-        """利用可能な MCP ツール一覧を返す"""
+        """Return a list of available MCP tools"""
         return [
             Tool(
                 name="get_cached_figma_file",
-                description="指定ファイルのノードツリーやメタデータを取得",
+                description=(
+                    "Get cached Figma file metadata and top-level frames. "
+                    "Returns file name, version, last modified date, and a list of main frames. "
+                    "Use this tool first to understand the structure of a Figma file."
+                ),
                 inputSchema={
                     "type": "object",
                     "properties": {
                         "file_id": {
                             "type": "string",
-                            "description": "Figma ファイル ID",
+                            "description": (
+                                "The Figma file ID. "
+                                "Found in URLs like figma.com/file/<file_id>/... "
+                                "or figma.com/design/<file_id>/..."
+                            ),
                         },
                     },
                     "required": ["file_id"],
@@ -65,17 +73,28 @@ def create_server() -> Server:
             ),
             Tool(
                 name="get_cached_figma_node",
-                description="単一ノードの詳細情報を取得",
+                description=(
+                    "Get detailed information for a specific node including all properties "
+                    "(type, name, layout, style, children, etc.). "
+                    "Use this after finding a node ID via search or list_figma_frames."
+                ),
                 inputSchema={
                     "type": "object",
                     "properties": {
                         "file_id": {
                             "type": "string",
-                            "description": "Figma ファイル ID",
+                            "description": (
+                                "The Figma file ID. "
+                                "Found in URLs like figma.com/file/<file_id>/... "
+                                "or figma.com/design/<file_id>/..."
+                            ),
                         },
                         "node_id": {
                             "type": "string",
-                            "description": "ノード ID",
+                            "description": (
+                                "The node ID in format '1:234' or '1234:5678'. "
+                                "Found in Figma URL as ?node-id=1:234 or from search results."
+                            ),
                         },
                     },
                     "required": ["file_id", "node_id"],
@@ -83,32 +102,43 @@ def create_server() -> Server:
             ),
             Tool(
                 name="search_figma_nodes_by_name",
-                description="ノード名でノードを検索",
+                description=(
+                    "Search nodes by name. Supports exact and partial matching. "
+                    "Returns matching nodes with their IDs, types, and paths. "
+                    "Useful for finding specific components, buttons, icons, etc."
+                ),
                 inputSchema={
                     "type": "object",
                     "properties": {
                         "file_id": {
                             "type": "string",
-                            "description": "Figma ファイル ID",
+                            "description": (
+                                "The Figma file ID. "
+                                "Found in URLs like figma.com/file/<file_id>/... "
+                                "or figma.com/design/<file_id>/..."
+                            ),
                         },
                         "name": {
                             "type": "string",
-                            "description": "検索するノード名",
+                            "description": "The node name to search for (e.g., 'Button', 'Header', 'Icon')",
                         },
                         "match_mode": {
                             "type": "string",
                             "enum": ["exact", "partial"],
                             "default": "exact",
-                            "description": "マッチモード",
+                            "description": (
+                                "Match mode: 'exact' for exact name match, "
+                                "'partial' for substring match (always case-insensitive)"
+                            ),
                         },
                         "limit": {
                             "type": "integer",
-                            "description": "最大取得件数",
+                            "description": "Maximum number of results to return",
                         },
                         "ignore_case": {
                             "type": "boolean",
                             "default": False,
-                            "description": "大文字小文字を区別しない検索",
+                            "description": "If true, perform case-insensitive matching (only for exact mode)",
                         },
                     },
                     "required": ["file_id", "name"],
@@ -116,32 +146,45 @@ def create_server() -> Server:
             ),
             Tool(
                 name="search_figma_frames_by_title",
-                description="フレーム名からフレームノードを検索",
+                description=(
+                    "Search frame nodes by title. Useful for finding specific screens, "
+                    "pages, or components. Returns matching frames with their IDs and paths."
+                ),
                 inputSchema={
                     "type": "object",
                     "properties": {
                         "file_id": {
                             "type": "string",
-                            "description": "Figma ファイル ID",
+                            "description": (
+                                "The Figma file ID. "
+                                "Found in URLs like figma.com/file/<file_id>/... "
+                                "or figma.com/design/<file_id>/..."
+                            ),
                         },
                         "title": {
                             "type": "string",
-                            "description": "検索するフレーム名",
+                            "description": (
+                                "The frame title to search for "
+                                "(e.g., 'Login Screen', 'Dashboard', 'Settings')"
+                            ),
                         },
                         "match_mode": {
                             "type": "string",
                             "enum": ["exact", "partial"],
                             "default": "exact",
-                            "description": "マッチモード",
+                            "description": (
+                                "Match mode: 'exact' for exact title match, "
+                                "'partial' for substring match (always case-insensitive)"
+                            ),
                         },
                         "limit": {
                             "type": "integer",
-                            "description": "最大取得件数",
+                            "description": "Maximum number of results to return",
                         },
                         "ignore_case": {
                             "type": "boolean",
                             "default": False,
-                            "description": "大文字小文字を区別しない検索",
+                            "description": "If true, perform case-insensitive matching (only for exact mode)",
                         },
                     },
                     "required": ["file_id", "title"],
@@ -149,13 +192,21 @@ def create_server() -> Server:
             ),
             Tool(
                 name="list_figma_frames",
-                description="ファイル直下の主要フレーム一覧を取得",
+                description=(
+                    "List all top-level frames in the file (direct children of pages). "
+                    "Useful for getting an overview of the design structure. "
+                    "Returns frame names, IDs, and their paths in the document hierarchy."
+                ),
                 inputSchema={
                     "type": "object",
                     "properties": {
                         "file_id": {
                             "type": "string",
-                            "description": "Figma ファイル ID",
+                            "description": (
+                                "The Figma file ID. "
+                                "Found in URLs like figma.com/file/<file_id>/... "
+                                "or figma.com/design/<file_id>/..."
+                            ),
                         },
                     },
                     "required": ["file_id"],
@@ -165,10 +216,10 @@ def create_server() -> Server:
 
     @server.call_tool()
     async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
-        """MCP ツールを呼び出す
+        """Call an MCP tool
 
-        Note: MCP SDK がスキーマバリデーションを行うため、必須引数の不足は
-        このハンドラに到達する前に SDK によって処理される。
+        Note: The MCP SDK performs schema validation, so missing required arguments
+        are handled by the SDK before reaching this handler.
         """
         try:
             store = get_store()
@@ -199,15 +250,15 @@ def create_server() -> Server:
             elif name == "list_figma_frames":
                 result = list_figma_frames(store, arguments["file_id"])
             else:
-                result = {"error": "unknown_tool", "message": f"不明なツールです（{name}）"}
+                result = {"error": "unknown_tool", "message": f"Unknown tool: {name}"}
 
             return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
         except Exception as e:
-            # 予期しないエラーをキャッチしてサーバークラッシュを防止
+            # Catch unexpected errors to prevent server crash
             logger.exception("Unexpected error in tool %s", name)
             result = {
                 "error": "internal_error",
-                "message": f"ツール実行中に予期しないエラーが発生しました（{type(e).__name__}）",
+                "message": f"Unexpected error while executing tool ({type(e).__name__})",
                 "tool": name,
             }
             return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]

@@ -124,13 +124,15 @@ Figma MCP サーバーで、Figma 無料プランの API 制限 (月 6 回) を�
 
 ## MCP Tools
 
-サーバーが公開する 5 つのツール：
+サーバーが公開する 5 つのツール（LLM 向けに英語で定義）：
 
-1. `get_cached_figma_file` - ファイルメタデータとフレーム一覧
-1. `get_cached_figma_node` - 単一ノードの詳細 (node_id 指定)
-1. `search_figma_nodes_by_name` - ノード名で検索 (exact/partial)
-1. `search_figma_frames_by_title` - フレーム名で検索 (exact/partial)
-1. `list_figma_frames` - トップレベルフレーム一覧
+1. `get_cached_figma_file` - Get file metadata and top-level frames
+1. `get_cached_figma_node` - Get detailed node info by node_id
+1. `search_figma_nodes_by_name` - Search nodes by name (exact/partial)
+1. `search_figma_frames_by_title` - Search frames by title (exact/partial)
+1. `list_figma_frames` - List top-level frames
+
+Note: Tool descriptions and error messages are in English for better LLM compatibility.
 
 ## Commit Message Format
 
