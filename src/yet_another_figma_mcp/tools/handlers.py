@@ -9,7 +9,10 @@ def _handle_invalid_file_id(file_id: str) -> dict[str, Any]:
     """Generate error response for invalid file_id"""
     return {
         "error": "invalid_file_id",
-        "message": f"Invalid file ID: '{file_id}'. File ID should be alphanumeric.",
+        "message": (
+            f"Invalid file ID: '{file_id}'. "
+            "File ID should contain only letters, numbers, underscores, and hyphens."
+        ),
         "file_id": file_id,
     }
 
@@ -48,11 +51,12 @@ def get_cached_figma_file(store: CacheStore, file_id: str) -> dict[str, Any]:
             "file_id": file_id,
         }
 
-    # Return root node and main frame list
+    # Return file metadata and main frame list
     frames: list[dict[str, Any]] = []
     for node_id, node_info in index.get("by_id", {}).items():
         if node_info.get("type") == "FRAME":
-            # Only shallow frames (direct children of pages)
+            # Include frames up to depth 3 (Document > Page > Frame or shallower)
+            # This captures top-level frames and allows for edge cases
             if len(node_info.get("path", [])) <= 3:
                 frames.append(
                     {
@@ -180,7 +184,7 @@ def search_figma_nodes_by_name(
                     node_info = by_id.get(node_id, {})
                     results.append({"id": node_id, **node_info})
 
-    if limit:
+    if limit is not None:
         results = results[:limit]
 
     return results
@@ -244,7 +248,7 @@ def search_figma_frames_by_title(
                     node_info = by_id.get(node_id, {})
                     results.append({"id": node_id, **node_info})
 
-    if limit:
+    if limit is not None:
         results = results[:limit]
 
     return results
