@@ -10,16 +10,17 @@ from typing import Annotated
 import typer
 
 from yet_another_figma_mcp.cli.app import DEFAULT_CACHE_DIR
+from yet_another_figma_mcp.cli.i18n import t
 
 
 def serve(
     cache_dir: Annotated[
         Path | None,
-        typer.Option("--cache-dir", "-d", help="キャッシュディレクトリ"),
+        typer.Option("--cache-dir", "-d", help=t("cache.cache_dir_help")),
     ] = None,
     verbose: Annotated[
         bool,
-        typer.Option("--verbose", "-V", help="詳細ログを出力（DEBUG レベル）"),
+        typer.Option("--verbose", "-V", help=t("serve.verbose_help")),
     ] = False,
 ) -> None:
     """MCP サーバーを起動 (stdio モード)"""
@@ -38,13 +39,13 @@ def serve(
     )
     logger = logging.getLogger("yet-another-figma-mcp")
 
-    logger.info("MCP サーバーを起動中...")
-    logger.info("キャッシュディレクトリ: %s", target_cache_dir)
+    logger.info(t("serve.starting"))
+    logger.info(t("serve.cache_dir", path=target_cache_dir))
 
     # SIGTERM ハンドラを設定 (SIGINT は KeyboardInterrupt で処理)
     def sigterm_handler(_signum: int, _frame: object) -> None:
         """SIGTERM シグナルを受信したときの処理"""
-        logger.info("SIGTERM を受信しました")
+        logger.info(t("serve.sigterm_received"))
         sys.exit(0)
 
     signal.signal(signal.SIGTERM, sigterm_handler)
@@ -52,4 +53,4 @@ def serve(
     try:
         asyncio.run(run_server())
     except KeyboardInterrupt:
-        logger.info("サーバーを終了しました")
+        logger.info(t("serve.server_stopped"))
