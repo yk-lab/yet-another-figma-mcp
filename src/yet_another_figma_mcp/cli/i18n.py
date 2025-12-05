@@ -43,12 +43,13 @@ def get_system_language() -> str:
         if lang_env.startswith("en"):
             return "en"
 
-    # 3. System locale
+    # 3. System locale (use getlocale instead of deprecated getdefaultlocale)
     try:
-        system_locale = locale.getdefaultlocale()[0] or ""
-        if system_locale.lower().startswith("ja"):
+        system_locale = locale.getlocale()[0] or ""
+        system_locale_lower = system_locale.lower()
+        if system_locale_lower.startswith("ja"):
             return "ja"
-        if system_locale.lower().startswith("en"):
+        if system_locale_lower.startswith("en"):
             return "en"
     except (ValueError, TypeError):
         pass
