@@ -60,6 +60,9 @@ def get_system_language() -> str:
 def set_language(lang: str) -> None:
     """Set current language
 
+    If an unsupported language is provided, the language is forcibly
+    set to DEFAULT_LANGUAGE (not kept at the current value).
+
     Args:
         lang: Language code ("ja" or "en")
     """
@@ -245,12 +248,15 @@ MESSAGES: dict[str, dict[str, str]] = {
 def t(key: str, **kwargs: Any) -> str:
     """Translate message by key
 
+    Falls back to DEFAULT_LANGUAGE if the current language has no translation,
+    and returns the key itself if no translation exists at all.
+
     Args:
         key: Message key (e.g., "cache.fetching")
         **kwargs: Format arguments for the message
 
     Returns:
-        Translated and formatted message
+        Translated and formatted message, or the key string as fallback
 
     Example:
         >>> t("cache.fetching", file_id="abc123")

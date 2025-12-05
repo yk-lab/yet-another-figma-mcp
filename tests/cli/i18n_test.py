@@ -18,8 +18,8 @@ def reset_language_to_english() -> Generator[None]:
 class TestI18nBasics:
     """Basic i18n functionality tests"""
 
-    def test_t_returns_english_by_default(self) -> None:
-        """Test that t() returns English message by default"""
+    def test_t_returns_english_when_set(self) -> None:
+        """Test that t() returns English message when language is set to en"""
         i18n.set_language("en")
         result = i18n.t("cache.fetching", file_id="abc123")
         assert "Fetching from Figma API" in result
