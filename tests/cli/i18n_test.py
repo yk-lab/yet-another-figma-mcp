@@ -7,31 +7,31 @@ from pytest_mock import MockerFixture
 class TestI18nBasics:
     """Basic i18n functionality tests"""
 
-    def test_t_returns_japanese_by_default(self) -> None:
-        """Test that t() returns Japanese message by default"""
-        from yet_another_figma_mcp.cli import i18n
-
-        i18n.set_language("ja")
-        result = i18n.t("cache.fetching", file_id="abc123")
-        assert "Figma API から取得中" in result
-        assert "abc123" in result
-
-    def test_t_returns_english_when_set(self) -> None:
-        """Test that t() returns English message when language is set to en"""
+    def test_t_returns_english_by_default(self) -> None:
+        """Test that t() returns English message by default"""
         from yet_another_figma_mcp.cli import i18n
 
         i18n.set_language("en")
         result = i18n.t("cache.fetching", file_id="abc123")
         assert "Fetching from Figma API" in result
         assert "abc123" in result
-        # Reset to default
+
+    def test_t_returns_japanese_when_set(self) -> None:
+        """Test that t() returns Japanese message when language is set to ja"""
+        from yet_another_figma_mcp.cli import i18n
+
         i18n.set_language("ja")
+        result = i18n.t("cache.fetching", file_id="abc123")
+        assert "Figma API から取得中" in result
+        assert "abc123" in result
+        # Reset to default
+        i18n.set_language("en")
 
     def test_t_with_format_args(self) -> None:
         """Test that t() formats messages with arguments"""
         from yet_another_figma_mcp.cli import i18n
 
-        i18n.set_language("ja")
+        i18n.set_language("en")
         result = i18n.t("cache.complete_with_failures", success=5, fail=2)
         assert "5" in result
         assert "2" in result
@@ -47,9 +47,9 @@ class TestI18nBasics:
         """Test that set_language ignores unsupported languages"""
         from yet_another_figma_mcp.cli import i18n
 
-        i18n.set_language("ja")
+        i18n.set_language("en")
         i18n.set_language("fr")  # Unsupported
-        assert i18n.get_language() == "ja"  # Should fall back to default
+        assert i18n.get_language() == "en"  # Should fall back to default
 
 
 class TestLanguageDetection:
@@ -84,10 +84,10 @@ class TestLanguageDetection:
         """Test that YAFM_LANG takes priority over LANG"""
         from yet_another_figma_mcp.cli import i18n
 
-        monkeypatch.setenv("YAFM_LANG", "en")
-        monkeypatch.setenv("LANG", "ja_JP.UTF-8")
+        monkeypatch.setenv("YAFM_LANG", "ja")
+        monkeypatch.setenv("LANG", "en_US.UTF-8")
         result = i18n.get_system_language()
-        assert result == "en"
+        assert result == "ja"
 
     def test_get_system_language_from_locale_ja(
         self, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
@@ -132,7 +132,7 @@ class TestLanguageDetection:
             return_value=(None, None),
         )
         result = i18n.get_system_language()
-        assert result == "ja"  # Default
+        assert result == "en"  # Default (English)
 
     def test_get_system_language_locale_raises_error(
         self, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
@@ -147,7 +147,7 @@ class TestLanguageDetection:
             side_effect=ValueError("Invalid locale"),
         )
         result = i18n.get_system_language()
-        assert result == "ja"  # Default
+        assert result == "en"  # Default (English)
 
     def test_get_system_language_unsupported_locale(
         self, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
@@ -162,7 +162,7 @@ class TestLanguageDetection:
             return_value=("fr_FR", "UTF-8"),
         )
         result = i18n.get_system_language()
-        assert result == "ja"  # Default
+        assert result == "en"  # Default (English)
 
     def test_get_system_language_lang_env_ja(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test LANG=ja detection"""
@@ -186,7 +186,7 @@ class TestLanguageDetection:
             return_value=("fr_FR", "UTF-8"),
         )
         result = i18n.get_system_language()
-        assert result == "ja"  # Default
+        assert result == "en"  # Default (English)
 
     def test_get_system_language_unsupported_yafm_lang(
         self, monkeypatch: pytest.MonkeyPatch
@@ -195,9 +195,9 @@ class TestLanguageDetection:
         from yet_another_figma_mcp.cli import i18n
 
         monkeypatch.setenv("YAFM_LANG", "fr")
-        monkeypatch.setenv("LANG", "en_US.UTF-8")
+        monkeypatch.setenv("LANG", "ja_JP.UTF-8")
         result = i18n.get_system_language()
-        assert result == "en"  # Falls through to LANG
+        assert result == "ja"  # Falls through to LANG
 
 
 class TestMessageCatalog:
@@ -250,7 +250,7 @@ class TestFormatArgs:
         """Test that missing format args don't raise errors"""
         from yet_another_figma_mcp.cli import i18n
 
-        i18n.set_language("ja")
+        i18n.set_language("en")
         # cache.fetching expects {file_id}
         result = i18n.t("cache.fetching")  # No file_id provided
         # Should return the unformatted message without raising
@@ -260,7 +260,7 @@ class TestFormatArgs:
         """Test that extra format args are ignored"""
         from yet_another_figma_mcp.cli import i18n
 
-        i18n.set_language("ja")
+        i18n.set_language("en")
         result = i18n.t("cache.fetching", file_id="abc", extra_arg="ignored")
         assert "abc" in result
 
@@ -272,14 +272,14 @@ class TestTFunctionFallback:
         """Test fallback to default language when current language missing"""
         from yet_another_figma_mcp.cli import i18n
 
-        # Temporarily add a message with only Japanese
-        mocker.patch.dict(i18n.MESSAGES, {"test.only_ja": {"ja": "日本語のみ"}})
+        # Temporarily add a message with only English
+        mocker.patch.dict(i18n.MESSAGES, {"test.only_en": {"en": "English only"}})
 
-        i18n.set_language("en")
-        result = i18n.t("test.only_ja")
-        # Should fall back to Japanese
-        assert result == "日本語のみ"
         i18n.set_language("ja")
+        result = i18n.t("test.only_en")
+        # Should fall back to English (default)
+        assert result == "English only"
+        i18n.set_language("en")
 
     def test_t_returns_key_when_no_translation(self, mocker: MockerFixture) -> None:
         """Test that t() returns key when no translation exists"""
@@ -297,9 +297,9 @@ class TestTFunctionFallback:
         from yet_another_figma_mcp.cli import i18n
 
         # Temporarily add a message with a format placeholder
-        mocker.patch.dict(i18n.MESSAGES, {"test.format": {"ja": "Hello {name}, your ID is {id}"}})
+        mocker.patch.dict(i18n.MESSAGES, {"test.format": {"en": "Hello {name}, your ID is {id}"}})
 
-        i18n.set_language("ja")
+        i18n.set_language("en")
         # Only provide 'name', missing 'id' should cause KeyError
         result = i18n.t("test.format", name="World")
         # Should return unformatted message due to KeyError

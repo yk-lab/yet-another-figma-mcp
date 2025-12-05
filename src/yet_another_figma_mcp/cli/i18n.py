@@ -1,7 +1,7 @@
 """CLI i18n (internationalization) support
 
 Simple dict-based i18n for CLI messages.
-Supports Japanese (default) and English.
+Supports English (default) and Japanese.
 """
 
 import locale
@@ -9,8 +9,8 @@ import os
 from typing import Any
 
 # Supported languages
-SUPPORTED_LANGUAGES = ("ja", "en")
-DEFAULT_LANGUAGE = "ja"
+SUPPORTED_LANGUAGES = ("en", "ja")
+DEFAULT_LANGUAGE = "en"
 
 # Current language (module-level state)
 _current_language: str = DEFAULT_LANGUAGE
