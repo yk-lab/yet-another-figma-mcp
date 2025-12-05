@@ -12,6 +12,7 @@ from rich.table import Table
 
 from yet_another_figma_mcp.cache import InvalidFileIdError, validate_file_id
 from yet_another_figma_mcp.cli.app import DEFAULT_CACHE_DIR
+from yet_another_figma_mcp.cli.i18n import t
 
 console = Console()
 
@@ -109,11 +110,11 @@ def _format_datetime(iso_string: str) -> str:
 def status(
     cache_dir: Annotated[
         Path | None,
-        typer.Option("--cache-dir", "-d", help="キャッシュディレクトリ"),
+        typer.Option("--cache-dir", "-d", help=t("cache.cache_dir_help")),
     ] = None,
     output_json: Annotated[
         bool,
-        typer.Option("--json", "-j", help="JSON 形式で出力"),
+        typer.Option("--json", "-j", help=t("status.json_help")),
     ] = False,
 ) -> None:
     """キャッシュ済みファイルの一覧と状態を表示"""
@@ -128,10 +129,10 @@ def status(
 
     # テーブル出力
     if not files_info:
-        console.print(f"[yellow]キャッシュが見つかりません: {target_cache_dir}[/yellow]")
+        console.print(f"[yellow]{t('status.no_cache_found', path=target_cache_dir)}[/yellow]")
         return
 
-    table = Table(title=f"キャッシュ済みファイル（{target_cache_dir}）")
+    table = Table(title=t("status.table_title", path=target_cache_dir))
     table.add_column("File ID", style="cyan", no_wrap=True)
     table.add_column("Name", style="green")
     table.add_column("Cached At", style="yellow")
@@ -147,4 +148,4 @@ def status(
         )
 
     console.print(table)
-    console.print(f"\n[dim]合計: {len(files_info)} ファイル[/dim]")
+    console.print(f"\n[dim]{t('status.total_files', count=len(files_info))}[/dim]")

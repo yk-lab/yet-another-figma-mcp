@@ -11,6 +11,7 @@ import pytest
 from typer.testing import CliRunner
 
 from yet_another_figma_mcp.cli import app
+from yet_another_figma_mcp.cli import i18n
 from yet_another_figma_mcp.figma import (
     FigmaAuthenticationError,
     FigmaFileNotFoundError,
@@ -18,6 +19,12 @@ from yet_another_figma_mcp.figma import (
 )
 
 runner = CliRunner()
+
+
+@pytest.fixture(autouse=True)
+def reset_language_to_english() -> None:
+    """Reset language to English for all tests in this module"""
+    i18n.set_language("en")
 
 
 @pytest.fixture
@@ -56,14 +63,14 @@ class TestCacheCommandValidation:
         """ファイル ID 未指定でエラー"""
         result = runner.invoke(app, ["cache"])
         assert result.exit_code == 1
-        assert "ファイル ID を指定してください" in result.stdout
+        assert "Please specify a file ID" in result.stdout
 
     def test_invalid_file_id_shows_error(self, tmp_path: Path) -> None:
         """無効なファイル ID でエラー"""
         with patch("yet_another_figma_mcp.cli.cache.FigmaClient"):
             result = runner.invoke(app, ["cache", "-f", "../invalid", "-d", str(tmp_path)])
         assert result.exit_code == 1
-        assert "無効なファイル ID" in result.stdout
+        assert "Invalid file ID" in result.stdout
 
     def test_non_utf8_file_list_shows_error(self, tmp_path: Path) -> None:
         """UTF-8 以外のエンコーディングでエラー"""
@@ -93,7 +100,7 @@ class TestCacheCommandSuccess:
         assert result.exit_code == 0
         assert "abc123" in result.stdout
         assert "Test Design" in result.stdout
-        assert "完了" in result.stdout
+        assert "Complete" in result.stdout
 
         # ファイルが保存されていることを確認
         file_path = tmp_path / "abc123" / "file_raw.json"
@@ -221,7 +228,7 @@ class TestCacheCommandSuccess:
             result = runner.invoke(app, ["cache", "-f", "abc123", "-d", str(tmp_path)])
 
         assert result.exit_code == 0
-        assert "キャッシュ済み" in result.stdout
+        assert "Already cached" in result.stdout
         # API は呼ばれない
         mock_client.get_file.assert_not_called()
 
@@ -267,7 +274,7 @@ class TestCacheCommandErrors:
             result = runner.invoke(app, ["cache", "-f", "abc123", "-d", str(tmp_path)])
 
         assert result.exit_code == 1
-        assert "認証エラー" in result.stdout
+        assert "Authentication error" in result.stdout
 
     def test_file_not_found_error(self, tmp_path: Path) -> None:
         """ファイル未存在エラー"""
@@ -281,7 +288,7 @@ class TestCacheCommandErrors:
             result = runner.invoke(app, ["cache", "-f", "abc123", "-d", str(tmp_path)])
 
         assert result.exit_code == 1
-        assert "ファイルが見つかりません" in result.stdout
+        assert "File not found" in result.stdout
 
     def test_rate_limit_error(self, tmp_path: Path) -> None:
         """レート制限エラー"""
@@ -295,8 +302,8 @@ class TestCacheCommandErrors:
             result = runner.invoke(app, ["cache", "-f", "abc123", "-d", str(tmp_path)])
 
         assert result.exit_code == 1
-        assert "レート制限" in result.stdout
-        assert "60秒後" in result.stdout
+        assert "Rate limited" in result.stdout
+        assert "60 seconds" in result.stdout
 
     def test_partial_failure(self, tmp_path: Path, mock_figma_response: dict[str, Any]) -> None:
         """一部失敗時のサマリー"""
@@ -317,5 +324,5 @@ class TestCacheCommandErrors:
             )
 
         assert result.exit_code == 1
-        assert "1 成功" in result.stdout
-        assert "1 失敗" in result.stdout
+        assert "1 succeeded" in result.stdout
+        assert "1 failed" in result.stdout

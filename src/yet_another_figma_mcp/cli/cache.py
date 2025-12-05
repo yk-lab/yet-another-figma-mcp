@@ -12,6 +12,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from yet_another_figma_mcp.cache import InvalidFileIdError, validate_file_id
 from yet_another_figma_mcp.cache.index import build_index, save_index
 from yet_another_figma_mcp.cli.app import DEFAULT_CACHE_DIR
+from yet_another_figma_mcp.cli.i18n import t
 from yet_another_figma_mcp.figma import (
     FigmaAPIError,
     FigmaAuthenticationError,
@@ -66,13 +67,13 @@ def _cache_single_file(
     try:
         validate_file_id(file_id)
     except InvalidFileIdError as e:
-        console.print(f"[red]✗[/red] {file_id}: 無効なファイル ID - {e}")
+        console.print(f"[red]✗[/red] {t('cache.invalid_file_id', file_id=file_id, error=e)}")
         return False
 
     # 既存キャッシュのチェック
     file_path = cache_dir / file_id / "file_raw.json"
     if file_path.exists() and not refresh:
-        console.print(f"[yellow]⊘[/yellow] {file_id}: キャッシュ済み（--refresh で更新）")
+        console.print(f"[yellow]⊘[/yellow] {t('cache.already_cached', file_id=file_id)}")
         return True
 
     with Progress(
@@ -82,33 +83,35 @@ def _cache_single_file(
         transient=True,
     ) as progress:
         # Figma API からファイル取得
-        task = progress.add_task(f"{file_id}: Figma API から取得中...", total=None)
+        task = progress.add_task(t("cache.fetching", file_id=file_id), total=None)
         try:
             file_data = client.get_file(file_id)
         except FigmaAuthenticationError:
             progress.remove_task(task)
-            console.print(f"[red]✗[/red] {file_id}: 認証エラー - API トークンを確認してください")
+            console.print(f"[red]✗[/red] {t('cache.auth_error', file_id=file_id)}")
             return False
         except FigmaFileNotFoundError:
             progress.remove_task(task)
-            console.print(f"[red]✗[/red] {file_id}: ファイルが見つかりません")
+            console.print(f"[red]✗[/red] {t('cache.not_found', file_id=file_id)}")
             return False
         except FigmaRateLimitError as e:
             progress.remove_task(task)
-            retry_msg = f"（{e.retry_after}秒後に再試行）" if e.retry_after else ""
-            console.print(f"[red]✗[/red] {file_id}: レート制限{retry_msg}")
+            retry_msg = t("cache.rate_limit_retry", seconds=e.retry_after) if e.retry_after else ""
+            console.print(
+                f"[red]✗[/red] {t('cache.rate_limit', file_id=file_id, retry_msg=retry_msg)}"
+            )
             return False
         except FigmaAPIError as e:
             progress.remove_task(task)
-            console.print(f"[red]✗[/red] {file_id}: API エラー - {e}")
+            console.print(f"[red]✗[/red] {t('cache.api_error', file_id=file_id, error=e)}")
             return False
 
         # ファイル保存
-        progress.update(task, description=f"{file_id}: ファイルを保存中...")
+        progress.update(task, description=t("cache.saving", file_id=file_id))
         _save_file_raw(file_data, file_id, cache_dir)
 
         # インデックス生成
-        progress.update(task, description=f"{file_id}: インデックスを生成中...")
+        progress.update(task, description=t("cache.indexing", file_id=file_id))
         index = build_index(file_data)
         save_index(index, cache_dir, file_id)
 
@@ -123,7 +126,7 @@ def _cache_single_file(
 def cache(
     file_id: Annotated[
         list[str] | None,
-        typer.Option("--file-id", "-f", help="Figma ファイル ID（複数指定可）"),
+        typer.Option("--file-id", "-f", help=t("cache.file_id_help")),
     ] = None,
     file_id_list: Annotated[
         Path | None,
@@ -131,16 +134,16 @@ def cache(
             "--file-id-list",
             "-l",
             exists=True,
-            help="ファイル ID 一覧を記述したテキストファイル",
+            help=t("cache.file_id_list_help"),
         ),
     ] = None,
     refresh: Annotated[
         bool,
-        typer.Option("--refresh", "-r", help="キャッシュを強制的に更新"),
+        typer.Option("--refresh", "-r", help=t("cache.refresh_help")),
     ] = False,
     cache_dir: Annotated[
         Path | None,
-        typer.Option("--cache-dir", "-d", help="キャッシュディレクトリ"),
+        typer.Option("--cache-dir", "-d", help=t("cache.cache_dir_help")),
     ] = None,
 ) -> None:
     """Figma ファイルのキャッシュを生成"""
@@ -159,15 +162,12 @@ def cache(
                     if line and not line.startswith("#"):
                         file_ids.append(line)
         except UnicodeDecodeError:
-            console.print(
-                "[red]エラー: ファイルリストの読み込みに失敗しました"
-                "（UTF-8 でエンコードしてください）[/red]"
-            )
+            console.print(f"[red]{t('cache.file_list_read_error')}[/red]")
             raise typer.Exit(1)
 
     if not file_ids:
-        console.print("[red]エラー: ファイル ID を指定してください[/red]")
-        console.print("使用例: yet-another-figma-mcp cache -f <file_id>")
+        console.print(f"[red]{t('cache.no_file_id')}[/red]")
+        console.print(t("cache.usage_example"))
         raise typer.Exit(1)
 
     # 重複除去
@@ -176,8 +176,8 @@ def cache(
     # キャッシュディレクトリ
     target_cache_dir = cache_dir or DEFAULT_CACHE_DIR
 
-    console.print(f"[bold]キャッシュ先:[/bold] {target_cache_dir}")
-    console.print(f"[bold]対象ファイル数:[/bold] {len(file_ids)}")
+    console.print(f"[bold]{t('cache.cache_dir_label')}[/bold] {target_cache_dir}")
+    console.print(f"[bold]{t('cache.target_files_label')}[/bold] {len(file_ids)}")
     console.print()
 
     # FigmaClient でファイル取得
@@ -197,7 +197,9 @@ def cache(
     # 結果サマリー
     console.print()
     if fail_count == 0:
-        console.print(f"[green]完了: {success_count} ファイルをキャッシュしました[/green]")
+        console.print(f"[green]{t('cache.complete_all_success', count=success_count)}[/green]")
     else:
-        console.print(f"[yellow]完了: {success_count} 成功, {fail_count} 失敗[/yellow]")
+        console.print(
+            f"[yellow]{t('cache.complete_with_failures', success=success_count, fail=fail_count)}[/yellow]"
+        )
         raise typer.Exit(1)

@@ -9,8 +9,15 @@ from typer.testing import CliRunner
 
 from yet_another_figma_mcp.cache.index import build_index
 from yet_another_figma_mcp.cli import app
+from yet_another_figma_mcp.cli import i18n
 
 runner = CliRunner()
+
+
+@pytest.fixture(autouse=True)
+def reset_language_to_english() -> None:
+    """Reset language to English for all tests in this module"""
+    i18n.set_language("en")
 
 
 @pytest.fixture
@@ -103,7 +110,7 @@ class TestStatusCommand:
         result = runner.invoke(app, ["status", "--cache-dir", str(tmp_path)])
 
         assert result.exit_code == 0
-        assert "キャッシュが見つかりません" in result.output
+        assert "No cache found" in result.output
 
     def test_status_shows_no_cache_for_nonexistent_dir(self, tmp_path: Path) -> None:
         """存在しないディレクトリの場合もメッセージを表示"""
@@ -111,7 +118,7 @@ class TestStatusCommand:
         result = runner.invoke(app, ["status", "--cache-dir", str(nonexistent)])
 
         assert result.exit_code == 0
-        assert "キャッシュが見つかりません" in result.output
+        assert "No cache found" in result.output
 
     def test_status_json_output(self, cache_with_files: Path) -> None:
         """JSON 形式で出力"""
@@ -195,6 +202,7 @@ class TestStatusCommand:
         result = runner.invoke(app, ["status", "--help"])
 
         assert result.exit_code == 0
+        # Docstrings are evaluated at import time, so they stay in Japanese
         assert "キャッシュ済みファイルの一覧と状態を表示" in result.output
 
     def test_status_skips_invalid_file_id_directory(
