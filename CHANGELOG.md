@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/yk-lab/yet-another-figma-mcp/compare/v0.1.3...v0.2.0) (2025-12-05)
+
+
+### Features
+
+* add i18n support for CLI messages ([#71](https://github.com/yk-lab/yet-another-figma-mcp/issues/71)) ([0fcb76c](https://github.com/yk-lab/yet-another-figma-mcp/commit/0fcb76c138986ed75fc02d13fe685e9dd74b519a))
+
 ## [0.1.3](https://github.com/yk-lab/yet-another-figma-mcp/compare/v0.1.2...v0.1.3) (2025-12-02)
 
 
