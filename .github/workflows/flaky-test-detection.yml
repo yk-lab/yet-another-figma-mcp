@@ -22,11 +22,11 @@ jobs:
         id: random-tests
         run: |
           echo "=== Run 1: Random seed ==="
-          uv run pytest -v --randomly-seed=random
+          uv run pytest -v -p randomly
           echo "=== Run 2: Different random seed ==="
-          uv run pytest -v --randomly-seed=random
+          uv run pytest -v -p randomly
           echo "=== Run 3: Another random seed ==="
-          uv run pytest -v --randomly-seed=random
+          uv run pytest -v -p randomly
       - name: Run flake finder on critical tests
         id: flake-finder
         run: |
