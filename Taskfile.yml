@@ -1,0 +1,93 @@
+# https://taskfile.dev
+version: "3"
+vars:
+  PYTHON: uv run python
+  PYTEST: uv run pytest
+  RUFF: uv run ruff
+  PYRIGHT: uv run pyright
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+  # Development
+  install:
+    desc: Install dependencies
+    cmds:
+      - uv sync --group dev
+  # Linting and Formatting
+  lint:
+    desc: Run Ruff linter
+    cmds:
+      - "{{.RUFF}} check ."
+  "lint:fix":
+    desc: Run Ruff linter with auto-fix
+    cmds:
+      - "{{.RUFF}} check --fix ."
+  format:
+    desc: Run Ruff formatter
+    cmds:
+      - "{{.RUFF}} format ."
+  "format:check":
+    desc: Check formatting without modifying files
+    cmds:
+      - "{{.RUFF}} format --check ."
+  # Type Checking
+  typecheck:
+    desc: Run Pyright type checker
+    cmds:
+      - "{{.PYRIGHT}}"
+  # Testing
+  test:
+    desc: Run all tests
+    cmds:
+      - "{{.PYTEST}}"
+  "test:verbose":
+    desc: Run all tests with verbose output
+    cmds:
+      - "{{.PYTEST}} -v"
+  "test:parallel":
+    desc: Run tests in parallel
+    cmds:
+      - "{{.PYTEST}} -n auto"
+  "test:cov":
+    desc: Run tests with coverage report
+    cmds:
+      - "{{.PYTEST}} --cov=src/yet_another_figma_mcp --cov-report=term-missing"
+  # Combined Checks
+  check:
+    desc: Run all checks (lint, format check, typecheck, test)
+    cmds:
+      - task: lint
+      - task: "format:check"
+      - task: typecheck
+      - task: test
+  # Pre-commit
+  pre-commit:
+    desc: Run all pre-commit hooks
+    cmds:
+      - uv run pre-commit run --all-files
+  # Application
+  serve:
+    desc: Start MCP server
+    cmds:
+      - uv run yet-another-figma-mcp serve
+  "serve:verbose":
+    desc: Start MCP server with verbose logging
+    cmds:
+      - uv run yet-another-figma-mcp serve --verbose
+  status:
+    desc: Show cache status
+    cmds:
+      - uv run yet-another-figma-mcp status
+  cache:
+    desc: "Cache a Figma file (usage: task cache -- -f <file_id>)"
+    cmds:
+      - uv run yet-another-figma-mcp cache {{.CLI_ARGS}}
+  # Cleanup
+  clean:
+    desc: Clean up generated files
+    cmds:
+      - rm -rf .pytest_cache .ruff_cache .pyright __pycache__ .coverage htmlcov
+      - find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+      - find . -type f -name "*.pyc" -delete 2>/dev/null || true

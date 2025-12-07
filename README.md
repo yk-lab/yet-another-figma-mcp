@@ -202,10 +202,76 @@ MCP サーバーは以下のツールを提供します:
 
 ## 開発
 
+### セットアップ
+
 ```bash
 # 開発用依存関係をインストール
 uv sync --group dev
+```
 
+### Task コマンド（推奨）
+
+[Task](https://taskfile.dev/) がインストールされている場合、以下のコマンドが使えます:
+
+```bash
+# 利用可能なタスク一覧
+task
+
+# 依存関係インストール
+task install
+
+# リント
+task lint
+
+# リント（自動修正付き）
+task lint:fix
+
+# フォーマット
+task format
+
+# フォーマット確認（修正なし）
+task format:check
+
+# 型チェック
+task typecheck
+
+# テスト
+task test
+
+# テスト（詳細出力）
+task test:verbose
+
+# テスト（並列実行）
+task test:parallel
+
+# テスト（カバレッジ付き）
+task test:cov
+
+# 全チェック（lint + format:check + typecheck + test）
+task check
+
+# pre-commit フック実行
+task pre-commit
+
+# MCP サーバー起動
+task serve
+
+# MCP サーバー起動（詳細ログ付き）
+task serve:verbose
+
+# キャッシュ状態確認
+task status
+
+# Figma ファイルをキャッシュ
+task cache -- -f <FILE_ID>
+
+# 生成ファイルのクリーンアップ
+task clean
+```
+
+### 手動実行
+
+```bash
 # リント
 uv run ruff check .
 
