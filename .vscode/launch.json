@@ -1,0 +1,64 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "MCP Server: serve",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "yet_another_figma_mcp.cli",
+      "args": ["serve", "--verbose"],
+      "console": "integratedTerminal",
+      "env": {
+        "FIGMA_API_TOKEN": "${env:FIGMA_API_TOKEN}"
+      },
+      "justMyCode": true
+    },
+    {
+      "name": "MCP Server: cache",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "yet_another_figma_mcp.cli",
+      "args": ["cache", "-f", "${input:fileId}"],
+      "console": "integratedTerminal",
+      "env": {
+        "FIGMA_API_TOKEN": "${env:FIGMA_API_TOKEN}"
+      },
+      "justMyCode": true
+    },
+    {
+      "name": "MCP Server: status",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "yet_another_figma_mcp.cli",
+      "args": ["status"],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "pytest: Current File",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["${file}", "-v"],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "pytest: All Tests",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["tests/", "-v"],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ],
+  "inputs": [
+    {
+      "id": "fileId",
+      "type": "promptString",
+      "description": "Figma File ID",
+      "default": ""
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "recommendations": [
+    // Python
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+
+    // Ruff (linter & formatter)
+    "charliermarsh.ruff",
+
+    // TOML support
+    "tamasfe.even-better-toml",
+
+    // Markdown
+    "yzhang.markdown-all-in-one",
+
+    // Git
+    "eamodio.gitlens",
+
+    // EditorConfig
+    "editorconfig.editorconfig"
+  ]
+}
