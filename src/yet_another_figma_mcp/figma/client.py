@@ -2,6 +2,7 @@
 
 import logging
 import os
+import platform
 import random
 import time
 from types import TracebackType
@@ -9,6 +10,7 @@ from typing import Any
 
 import httpx
 
+from yet_another_figma_mcp import __version__
 from yet_another_figma_mcp.cache import validate_file_id
 from yet_another_figma_mcp.figma.exceptions import (
     FigmaAPIError,
@@ -25,6 +27,19 @@ DEFAULT_TIMEOUT = 60.0  # Figma の大きなファイルは時間がかかる
 DEFAULT_MAX_RETRIES = 3
 DEFAULT_RETRY_BASE_DELAY = 1.0  # 秒
 DEFAULT_RETRY_MAX_DELAY = 30.0  # 秒
+
+
+def build_user_agent() -> str:
+    """Build User-Agent string for API requests
+
+    Format: yet-another-figma-mcp/{version} (Python/{py_version}; httpx/{httpx_version})
+
+    Returns:
+        User-Agent string
+    """
+    py_version = platform.python_version()
+    httpx_version = httpx.__version__
+    return f"yet-another-figma-mcp/{__version__} (Python/{py_version}; httpx/{httpx_version})"
 
 
 class FigmaClient:
@@ -74,7 +89,10 @@ class FigmaClient:
 
         self._client = httpx.Client(
             base_url=self.BASE_URL,
-            headers={"X-Figma-Token": self.token},
+            headers={
+                "X-Figma-Token": self.token,
+                "User-Agent": build_user_agent(),
+            },
             timeout=self.timeout,
         )
 

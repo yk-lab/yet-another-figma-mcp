@@ -3,12 +3,14 @@
 # pyright: reportPrivateUsage=false
 # ruff: noqa: S105, S106  # Test tokens are not real secrets
 
+import platform
 from collections.abc import Generator
 from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
 
+from yet_another_figma_mcp import __version__
 from yet_another_figma_mcp.cache import InvalidFileIdError
 from yet_another_figma_mcp.figma import (
     FigmaAPIError,
@@ -18,6 +20,32 @@ from yet_another_figma_mcp.figma import (
     FigmaRateLimitError,
     FigmaServerError,
 )
+from yet_another_figma_mcp.figma.client import build_user_agent
+
+
+class TestBuildUserAgent:
+    """build_user_agent 関数のテスト"""
+
+    def test_build_user_agent_format(self) -> None:
+        """User-Agent の形式を確認"""
+        user_agent = build_user_agent()
+
+        # 期待される形式: yet-another-figma-mcp/{version} (Python/{py_version}; httpx/{httpx_version})
+        assert user_agent.startswith("yet-another-figma-mcp/")
+        assert __version__ in user_agent
+        assert f"Python/{platform.python_version()}" in user_agent
+        assert f"httpx/{httpx.__version__}" in user_agent
+
+    def test_build_user_agent_contains_all_components(self) -> None:
+        """User-Agent に必要なコンポーネントが含まれていることを確認"""
+        user_agent = build_user_agent()
+
+        # パッケージ名とバージョン
+        assert "yet-another-figma-mcp" in user_agent
+        # Python バージョン
+        assert "Python/" in user_agent
+        # httpx バージョン
+        assert "httpx/" in user_agent
 
 
 class TestFigmaClientInit:
@@ -55,6 +83,17 @@ class TestFigmaClientInit:
         assert client.max_retries == 5
         assert client.retry_base_delay == 2.0
         assert client.retry_max_delay == 60.0
+        client.close()
+
+    def test_init_sets_user_agent_header(self) -> None:
+        """初期化時に User-Agent ヘッダーが設定されることを確認"""
+        client = FigmaClient(token="test-token")
+        headers = client._client.headers
+
+        assert "User-Agent" in headers
+        assert "yet-another-figma-mcp" in headers["User-Agent"]
+        assert "Python/" in headers["User-Agent"]
+        assert "httpx/" in headers["User-Agent"]
         client.close()
 
 
