@@ -202,10 +202,43 @@ MCP サーバーは以下のツールを提供します:
 
 ## 開発
 
+### セットアップ
+
 ```bash
 # 開発用依存関係をインストール
 uv sync --group dev
+```
 
+### Task コマンド（推奨）
+
+[Task](https://taskfile.dev/) がインストールされている場合、以下のコマンドが使えます:
+
+```bash
+# 利用可能なタスク一覧
+task
+
+# リント
+task lint
+
+# フォーマット
+task format
+
+# 型チェック
+task typecheck
+
+# テスト
+task test
+
+# 全チェック（lint + format:check + typecheck + test）
+task check
+
+# MCP サーバー起動
+task serve
+```
+
+### 手動実行
+
+```bash
 # リント
 uv run ruff check .
 
