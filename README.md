@@ -36,6 +36,28 @@ uvx yet-another-figma-mcp --help
 pipx install yet-another-figma-mcp
 ```
 
+### Docker
+
+Docker イメージも提供しています:
+
+```bash
+# MCP サーバーを起動
+docker run --rm \
+  -v ~/.yet_another_figma_mcp:/home/app/.yet_another_figma_mcp \
+  ghcr.io/yk-lab/yet-another-figma-mcp serve
+
+# キャッシュを生成（FIGMA_API_TOKEN が必要）
+docker run --rm \
+  -e FIGMA_API_TOKEN \
+  -v ~/.yet_another_figma_mcp:/home/app/.yet_another_figma_mcp \
+  ghcr.io/yk-lab/yet-another-figma-mcp cache -f <FILE_ID>
+
+# ステータス確認
+docker run --rm \
+  -v ~/.yet_another_figma_mcp:/home/app/.yet_another_figma_mcp \
+  ghcr.io/yk-lab/yet-another-figma-mcp status
+```
+
 ## セットアップ
 
 ### Figma API トークンの設定
