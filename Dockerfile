@@ -49,7 +49,9 @@ USER app
 # Default cache directory
 ENV YET_ANOTHER_FIGMA_MCP_CACHE_DIR=/home/app/.yet_another_figma_mcp
 
-# Expose no ports by default (stdio-based MCP server)
+# Health check - verify CLI is functional (stdio-based server, no HTTP endpoint)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD ["yet-another-figma-mcp", "--help"]
 
 ENTRYPOINT ["yet-another-figma-mcp"]
 CMD ["serve"]
