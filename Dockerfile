@@ -8,18 +8,14 @@ WORKDIR /app
 # Enable bytecode compilation for faster startup
 ENV UV_COMPILE_BYTECODE=1
 
-# Copy dependency files first for better cache utilization
-COPY pyproject.toml uv.lock ./
+# Copy all project files (needed for hatch-vcs version detection)
+COPY . .
 
-# Install dependencies only (without the package itself)
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --no-dev
+# Set fallback version for builds without git history
+ARG SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0
+ENV SETUPTOOLS_SCM_PRETEND_VERSION=${SETUPTOOLS_SCM_PRETEND_VERSION}
 
-# Copy source code
-COPY src/ ./src/
-COPY README.md LICENSE ./
-
-# Install the package
+# Install dependencies and the package
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
