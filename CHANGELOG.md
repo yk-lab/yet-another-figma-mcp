@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.2.0](https://github.com/yk-lab/yet-another-figma-mcp/compare/v0.1.3...v0.2.0) (2025-12-27)
+
+
+### Features
+
+* add i18n support for CLI messages ([#71](https://github.com/yk-lab/yet-another-figma-mcp/issues/71)) ([0fcb76c](https://github.com/yk-lab/yet-another-figma-mcp/commit/0fcb76c138986ed75fc02d13fe685e9dd74b519a))
+* **dx:** add devcontainer configuration ([#78](https://github.com/yk-lab/yet-another-figma-mcp/issues/78)) ([3cff06c](https://github.com/yk-lab/yet-another-figma-mcp/commit/3cff06c40a60e79abbbfe62f15f303bc1599f76a)), closes [#26](https://github.com/yk-lab/yet-another-figma-mcp/issues/26)
+* **dx:** add qlty maintainability badge and configure bandit ([#77](https://github.com/yk-lab/yet-another-figma-mcp/issues/77)) ([e860910](https://github.com/yk-lab/yet-another-figma-mcp/commit/e8609108e9f8b36cc838c1b694205747c0ac9e1e)), closes [#19](https://github.com/yk-lab/yet-another-figma-mcp/issues/19)
+* **dx:** add Taskfile for common development commands ([#75](https://github.com/yk-lab/yet-another-figma-mcp/issues/75)) ([fdabd0c](https://github.com/yk-lab/yet-another-figma-mcp/commit/fdabd0ca1edd1a42f64b0afc9514bc13a0cedbfb))
+* **dx:** add VSCode settings for better developer experience ([#74](https://github.com/yk-lab/yet-another-figma-mcp/issues/74)) ([4a59fb0](https://github.com/yk-lab/yet-another-figma-mcp/commit/4a59fb0cec527d2a006942f26bd357a50eab6ae4)), closes [#30](https://github.com/yk-lab/yet-another-figma-mcp/issues/30)
+* **figma:** add custom User-Agent header to FigmaClient ([#73](https://github.com/yk-lab/yet-another-figma-mcp/issues/73)) ([95ebb98](https://github.com/yk-lab/yet-another-figma-mcp/commit/95ebb9800a925f0af3b2ac352a1df4d3c23df95e)), closes [#41](https://github.com/yk-lab/yet-another-figma-mcp/issues/41)
+
+
+### Bug Fixes
+
+* **ci:** correct pytest-randomly seed option in flaky test workflow ([#76](https://github.com/yk-lab/yet-another-figma-mcp/issues/76)) ([93a5a95](https://github.com/yk-lab/yet-another-figma-mcp/commit/93a5a950dc0ee42ff27bf805e633f67c3610146e)), closes [#62](https://github.com/yk-lab/yet-another-figma-mcp/issues/62)
+
 ## [0.1.3](https://github.com/yk-lab/yet-another-figma-mcp/compare/v0.1.2...v0.1.3) (2025-12-02)
 
 
