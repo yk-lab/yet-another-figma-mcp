@@ -16,6 +16,21 @@ class InvalidFileIdError(ValueError):
 _VALID_FILE_ID_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
 
 
+def normalize_node_id(node_id: str) -> str:
+    """node_id を正規化する (ハイフン形式をコロン形式に変換)
+
+    Figma の URL では node-id=123-456 のようにハイフン形式が使われるが、
+    API レスポンスでは 123:456 のようにコロン形式で保存されている。
+
+    Args:
+        node_id: 正規化する Figma ノード ID
+
+    Returns:
+        コロン形式に正規化されたノード ID
+    """
+    return node_id.replace("-", ":")
+
+
 def validate_file_id(file_id: str) -> None:
     """file_id を検証し、パストラバーサル攻撃を防止する
 

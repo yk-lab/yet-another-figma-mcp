@@ -139,6 +139,21 @@ class TestGetCachedFigmaNode:
         assert result["error"] == "file_not_found"
         assert result["file_id"] == "nonexistent"
 
+    def test_accepts_hyphen_format_node_id(self, store_with_data: CacheStore) -> None:
+        """URL形式のハイフン区切りnode_idでもノードを取得できる"""
+        # "1-1" は URL の node-id パラメータ形式、内部的には "1:1"
+        result = get_cached_figma_node(store_with_data, "test123", "1-1")
+        assert "error" not in result
+        assert result["name"] == "Login Screen"
+        assert result["type"] == "FRAME"
+
+    def test_accepts_nested_node_with_hyphen_format(self, store_with_data: CacheStore) -> None:
+        """ネストされたノードもハイフン形式で取得できる"""
+        result = get_cached_figma_node(store_with_data, "test123", "1-2")
+        assert "error" not in result
+        assert result["name"] == "Primary Button"
+        assert result["type"] == "COMPONENT"
+
 
 class TestSearchFigmaNodesByName:
     def test_returns_empty_for_invalid_file_id(self, store_with_data: CacheStore) -> None:

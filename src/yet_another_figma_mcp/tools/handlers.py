@@ -2,7 +2,12 @@
 
 from typing import Any, Literal
 
-from yet_another_figma_mcp.cache import CacheStore, InvalidFileIdError, validate_file_id
+from yet_another_figma_mcp.cache import (
+    CacheStore,
+    InvalidFileIdError,
+    normalize_node_id,
+    validate_file_id,
+)
 
 
 def _handle_invalid_file_id(file_id: str) -> dict[str, Any]:
@@ -90,6 +95,9 @@ def get_cached_figma_node(store: CacheStore, file_id: str, node_id: str) -> dict
         validate_file_id(file_id)
     except InvalidFileIdError:
         return _handle_invalid_file_id(file_id)
+
+    # URL のハイフン形式 (7749-4609) を API のコロン形式 (7749:4609) に正規化
+    node_id = normalize_node_id(node_id)
 
     file_data = store.get_file(file_id)
     if not file_data:

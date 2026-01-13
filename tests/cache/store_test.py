@@ -7,7 +7,11 @@ from typing import Any
 import pytest
 
 from yet_another_figma_mcp.cache.index import build_index
-from yet_another_figma_mcp.cache.store import CacheStore, InvalidFileIdError
+from yet_another_figma_mcp.cache.store import (
+    CacheStore,
+    InvalidFileIdError,
+    normalize_node_id,
+)
 
 
 @pytest.fixture
@@ -144,3 +148,31 @@ class TestFileIdValidation:
         store = CacheStore()
         with pytest.raises(InvalidFileIdError):
             store.get_index("../../../etc/passwd")
+
+
+class TestNormalizeNodeId:
+    """node_id の正規化テスト (URL形式 → API形式)"""
+
+    def test_hyphen_to_colon(self) -> None:
+        """ハイフン形式をコロン形式に変換"""
+        assert normalize_node_id("7749-4609") == "7749:4609"
+
+    def test_multiple_hyphens(self) -> None:
+        """複数のハイフンがある場合も全て変換"""
+        assert normalize_node_id("1-2-3") == "1:2:3"
+
+    def test_already_colon_format(self) -> None:
+        """既にコロン形式の場合はそのまま"""
+        assert normalize_node_id("7749:4609") == "7749:4609"
+
+    def test_no_separator(self) -> None:
+        """セパレータがない場合はそのまま"""
+        assert normalize_node_id("12345") == "12345"
+
+    def test_empty_string(self) -> None:
+        """空文字列はそのまま"""
+        assert normalize_node_id("") == ""
+
+    def test_complex_id(self) -> None:
+        """複雑なノードIDの変換"""
+        assert normalize_node_id("123-456-789") == "123:456:789"
