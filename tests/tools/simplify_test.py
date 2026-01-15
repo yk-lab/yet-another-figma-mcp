@@ -142,6 +142,35 @@ class TestSimplifyNode:
         assert "py-8" in result["layout"]
         assert "px-16" in result["layout"]
 
+    def test_complex_padding_all_different(self) -> None:
+        """4 values all different padding / 4 値すべて異なるパディング"""
+        node = {
+            "id": "1:1",
+            "name": "Box",
+            "type": "FRAME",
+            "layoutMode": "VERTICAL",
+            "paddingTop": 4,
+            "paddingRight": 8,
+            "paddingBottom": 12,
+            "paddingLeft": 16,
+        }
+        result = _simplify(node)
+        assert "p-[4,8,12,16]" in result["layout"]
+
+    def test_alignment_justify_and_items(self) -> None:
+        """Alignment properties / アラインメントプロパティ"""
+        node = {
+            "id": "1:1",
+            "name": "Box",
+            "type": "FRAME",
+            "layoutMode": "HORIZONTAL",
+            "primaryAxisAlignItems": "CENTER",
+            "counterAxisAlignItems": "MAX",
+        }
+        result = _simplify(node)
+        assert "justify-center" in result["layout"]
+        assert "items-max" in result["layout"]
+
     def test_fills_solid_color(self) -> None:
         """SOLID 塗りつぶしが HEX に変換される"""
         node = {
@@ -273,6 +302,30 @@ class TestSimplifyNode:
         }
         result = _simplify(node)
         assert "blur(10px)" in result["effects"]
+
+    def test_invisible_effect_skipped(self) -> None:
+        """Invisible effects are skipped / 非表示エフェクトはスキップされる"""
+        node = {
+            "id": "1:1",
+            "name": "Box",
+            "type": "RECTANGLE",
+            "effects": [
+                {
+                    "type": "DROP_SHADOW",
+                    "visible": False,
+                    "offset": {"x": 0, "y": 4},
+                    "radius": 8,
+                },
+                {
+                    "type": "LAYER_BLUR",
+                    "visible": True,
+                    "radius": 5,
+                },
+            ],
+        }
+        result = _simplify(node)
+        assert result["effects"] == "blur(5px)"
+        assert "shadow" not in result["effects"]
 
     def test_opacity(self) -> None:
         """透明度が抽出される"""

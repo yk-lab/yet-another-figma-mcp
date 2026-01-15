@@ -286,6 +286,10 @@ uv run pyright
 uv run pytest
 ```
 
+## Acknowledgments
+
+- [Figma-Context-MCP](https://github.com/GLips/Figma-Context-MCP) - AI 向けノード簡略化のアプローチを参考にさせていただきました
+
 ## ライセンス
 
 MIT License - 詳細は [LICENSE](LICENSE) を参照してください。
