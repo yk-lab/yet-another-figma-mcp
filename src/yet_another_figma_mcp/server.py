@@ -76,7 +76,8 @@ def create_server() -> Server:
                 description=(
                     "Get detailed information for a specific node including all properties "
                     "(type, name, layout, style, children, etc.). "
-                    "Use this after finding a node ID via search or list_figma_frames."
+                    "Use this after finding a node ID via search or list_figma_frames. "
+                    "Use 'depth' to limit children depth, 'simplified' for AI-optimized output."
                 ),
                 inputSchema={
                     "type": "object",
@@ -92,9 +93,26 @@ def create_server() -> Server:
                         "node_id": {
                             "type": "string",
                             "description": (
-                                "The node ID in format '1:234' or '1234:5678'. "
-                                "Found in Figma URL as ?node-id=1:234 or from search results."
+                                "The node ID in format '1:234', '1234:5678', or '1-234' (URL format). "
+                                "Found in Figma URL as ?node-id=1-234 or from search results."
                             ),
+                        },
+                        "depth": {
+                            "type": "integer",
+                            "description": (
+                                "Maximum depth of children to include. "
+                                "0 = no children, 1 = immediate children only, etc. "
+                                "Omit for unlimited depth. Use this to reduce response size."
+                            ),
+                        },
+                        "simplified": {
+                            "type": "boolean",
+                            "description": (
+                                "If true, return AI-optimized format with CSS-like properties "
+                                "(e.g., 'flex-row gap-8 p-16' for layout). "
+                                "Significantly reduces response size. Recommended for large nodes."
+                            ),
+                            "default": False,
                         },
                     },
                     "required": ["file_id", "node_id"],
@@ -228,7 +246,13 @@ def create_server() -> Server:
             if name == "get_cached_figma_file":
                 result = get_cached_figma_file(store, arguments["file_id"])
             elif name == "get_cached_figma_node":
-                result = get_cached_figma_node(store, arguments["file_id"], arguments["node_id"])
+                result = get_cached_figma_node(
+                    store,
+                    arguments["file_id"],
+                    arguments["node_id"],
+                    depth=arguments.get("depth"),
+                    simplified=arguments.get("simplified", False),
+                )
             elif name == "search_figma_nodes_by_name":
                 result = search_figma_nodes_by_name(
                     store,

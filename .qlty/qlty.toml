@@ -66,9 +66,14 @@ name = "actionlint"
 
 [[plugin]]
 name = "bandit"
-# Exclude test files where assert is commonly used
 file_types = ["python"]
-exclude_patterns = ["**/tests/**", "**/*_test.py"]
+
+# Ignore B101 (assert_used) in test files / テストファイルでの assert 使用を許可
+[[triage]]
+match.plugins = ["bandit"]
+match.rules = ["bandit:B101"]
+match.file_patterns = ["**/tests/**", "**/*_test.py", "**/test_*.py"]
+set.ignored = true
 
 [[plugin]]
 name = "radarlint-js"
