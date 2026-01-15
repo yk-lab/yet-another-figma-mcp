@@ -154,6 +154,43 @@ class TestGetCachedFigmaNode:
         assert result["name"] == "Primary Button"
         assert result["type"] == "COMPONENT"
 
+    def test_depth_zero_excludes_children(self, store_with_data: CacheStore) -> None:
+        """depth=0 で子要素が除外される"""
+        result = get_cached_figma_node(store_with_data, "test123", "1:1", depth=0)
+        assert "error" not in result
+        assert result["name"] == "Login Screen"
+        assert "children" not in result
+        assert result["_childCount"] == 1  # Primary Button
+
+    def test_depth_one_includes_immediate_children(self, store_with_data: CacheStore) -> None:
+        """depth=1 で直接の子要素のみ含まれる"""
+        result = get_cached_figma_node(store_with_data, "test123", "1:1", depth=1)
+        assert "error" not in result
+        assert "children" in result
+        assert len(result["children"]) == 1
+        # 子要素の子要素は含まれない
+        child = result["children"][0]
+        assert child["name"] == "Primary Button"
+        assert "children" not in child or child.get("_childCount") == 0
+
+    def test_simplified_mode_returns_css_like_format(self, store_with_data: CacheStore) -> None:
+        """simplified=True でCSS風の簡略化形式で返る"""
+        result = get_cached_figma_node(store_with_data, "test123", "1:1", simplified=True)
+        assert "error" not in result
+        assert result["name"] == "Login Screen"
+        assert result["type"] == "FRAME"
+        # 簡略化モードでは余計なプロパティが除外される
+        assert "absoluteBoundingBox" not in result
+
+    def test_simplified_with_depth(self, store_with_data: CacheStore) -> None:
+        """simplified=True と depth の組み合わせ"""
+        result = get_cached_figma_node(store_with_data, "test123", "1:1", depth=0, simplified=True)
+        assert "error" not in result
+        assert result["name"] == "Login Screen"
+        # 子要素が除外されている
+        assert result.get("children") == []
+        assert result.get("_childCount") == 1
+
 
 class TestSearchFigmaNodesByName:
     def test_returns_empty_for_invalid_file_id(self, store_with_data: CacheStore) -> None:
