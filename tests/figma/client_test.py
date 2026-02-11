@@ -53,15 +53,15 @@ class TestFigmaClientInit:
 
     def test_init_with_token(self) -> None:
         """トークン引数での初期化"""
-        client = FigmaClient(token="test-token")
-        assert client.token == "test-token"
+        client = FigmaClient(token="test-token")  # nosec B106
+        assert client.token == "test-token"  # nosec B105
         client.close()
 
     def test_init_with_env_token(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """環境変数からのトークン取得"""
         monkeypatch.setenv("FIGMA_API_TOKEN", "env-token")
         client = FigmaClient()
-        assert client.token == "env-token"
+        assert client.token == "env-token"  # nosec B105
         client.close()
 
     def test_init_without_token_raises_error(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -72,7 +72,7 @@ class TestFigmaClientInit:
 
     def test_init_with_custom_settings(self) -> None:
         """カスタム設定での初期化"""
-        client = FigmaClient(
+        client = FigmaClient(  # nosec B106
             token="test-token",
             timeout=120.0,
             max_retries=5,
@@ -87,7 +87,7 @@ class TestFigmaClientInit:
 
     def test_init_sets_user_agent_header(self) -> None:
         """初期化時に User-Agent ヘッダーが設定されることを確認"""
-        client = FigmaClient(token="test-token")
+        client = FigmaClient(token="test-token")  # nosec B106
         headers = client._client.headers
 
         assert "User-Agent" in headers
@@ -102,8 +102,8 @@ class TestFigmaClientContextManager:
 
     def test_context_manager(self) -> None:
         """with 文での使用"""
-        with FigmaClient(token="test-token") as client:
-            assert client.token == "test-token"
+        with FigmaClient(token="test-token") as client:  # nosec B106
+            assert client.token == "test-token"  # nosec B105
 
 
 class TestFigmaClientParseRetryAfterHeader:
@@ -147,13 +147,13 @@ class TestFigmaClientRetryDelay:
 
     def test_retry_after_respected(self) -> None:
         """Retry-After ヘッダーの尊重"""
-        with FigmaClient(token="test-token") as client:
+        with FigmaClient(token="test-token") as client:  # nosec B106
             delay = client._calculate_retry_delay(0, retry_after=10)
             assert delay == 10.0
 
     def test_exponential_backoff(self) -> None:
         """指数バックオフの計算"""
-        with FigmaClient(token="test-token", retry_base_delay=1.0) as client:
+        with FigmaClient(token="test-token", retry_base_delay=1.0) as client:  # nosec B106
             # attempt=0: 1 * 2^0 = 1 (±25% jitter)
             delay0 = client._calculate_retry_delay(0)
             assert 0.75 <= delay0 <= 1.25
@@ -168,7 +168,7 @@ class TestFigmaClientRetryDelay:
 
     def test_max_delay_cap(self) -> None:
         """最大待機時間のクリップ"""
-        with FigmaClient(token="test-token", retry_base_delay=10.0, retry_max_delay=15.0) as client:
+        with FigmaClient(token="test-token", retry_base_delay=10.0, retry_max_delay=15.0) as client:  # nosec B106
             # attempt=5: 10 * 2^5 = 320 → capped to 15
             delay = client._calculate_retry_delay(5)
             assert delay == 15.0
@@ -180,7 +180,7 @@ class TestFigmaClientErrorHandling:
     @pytest.fixture
     def client(self) -> Generator[FigmaClient]:
         """テスト用クライアント"""
-        client = FigmaClient(token="test-token", max_retries=0)
+        client = FigmaClient(token="test-token", max_retries=0)  # nosec B106
         yield client
         client.close()
 
@@ -258,7 +258,7 @@ class TestFigmaClientGetFile:
             }
             mock_request.return_value = mock_response
 
-            client = FigmaClient(token="test-token")
+            client = FigmaClient(token="test-token")  # nosec B106
             result = client.get_file("file123")
 
             assert result["name"] == "Test File"
@@ -267,7 +267,7 @@ class TestFigmaClientGetFile:
 
     def test_get_file_validates_file_id(self) -> None:
         """file_id のバリデーション"""
-        client = FigmaClient(token="test-token")
+        client = FigmaClient(token="test-token")  # nosec B106
 
         with pytest.raises(InvalidFileIdError):
             client.get_file("")
@@ -286,7 +286,7 @@ class TestFigmaClientRetry:
 
     def test_retry_on_server_error(self) -> None:
         """サーバーエラー時のリトライ"""
-        with FigmaClient(token="test-token", max_retries=2, retry_base_delay=0.01) as client:
+        with FigmaClient(token="test-token", max_retries=2, retry_base_delay=0.01) as client:  # nosec B106
             with patch.object(client._client, "request") as mock_request:
                 # 1回目: 503、2回目: 200
                 error_response = MagicMock(spec=httpx.Response)
@@ -307,7 +307,7 @@ class TestFigmaClientRetry:
 
     def test_retry_exhausted(self) -> None:
         """リトライ回数超過"""
-        with FigmaClient(token="test-token", max_retries=1, retry_base_delay=0.01) as client:
+        with FigmaClient(token="test-token", max_retries=1, retry_base_delay=0.01) as client:  # nosec B106
             with patch.object(client._client, "request") as mock_request:
                 error_response = MagicMock(spec=httpx.Response)
                 error_response.status_code = 503
@@ -323,7 +323,7 @@ class TestFigmaClientRetry:
 
     def test_no_retry_on_client_error(self) -> None:
         """クライアントエラー（4xx）はリトライしない"""
-        with FigmaClient(token="test-token", max_retries=3, retry_base_delay=0.01) as client:
+        with FigmaClient(token="test-token", max_retries=3, retry_base_delay=0.01) as client:  # nosec B106
             with patch.object(client._client, "request") as mock_request:
                 error_response = MagicMock(spec=httpx.Response)
                 error_response.status_code = 400
@@ -339,7 +339,7 @@ class TestFigmaClientRetry:
 
     def test_retry_on_timeout(self) -> None:
         """タイムアウト時のリトライ"""
-        with FigmaClient(token="test-token", max_retries=2, retry_base_delay=0.01) as client:
+        with FigmaClient(token="test-token", max_retries=2, retry_base_delay=0.01) as client:  # nosec B106
             with patch.object(client._client, "request") as mock_request:
                 success_response = MagicMock(spec=httpx.Response)
                 success_response.status_code = 200
