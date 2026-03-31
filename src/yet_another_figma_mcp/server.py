@@ -211,7 +211,7 @@ def create_server() -> Server:
             Tool(
                 name="list_figma_frames",
                 description=(
-                    "List all top-level frames in the file (direct children of pages). "
+                    "List all top-level frames in the file (including frames inside sections). "
                     "Useful for getting an overview of the design structure. "
                     "Returns frame names, IDs, and their paths in the document hierarchy."
                 ),
