@@ -11,6 +11,10 @@ from yet_another_figma_mcp.cache import (
 from yet_another_figma_mcp.tools.simplify import simplify_node, truncate_children
 
 
+# Effective depth for a top-level frame: Document (1) > Page (2) > Frame (3)
+_TOP_LEVEL_FRAME_DEPTH = 3
+
+
 def _handle_invalid_file_id(file_id: str) -> dict[str, Any]:
     """Generate error response for invalid file_id"""
     return {
@@ -21,6 +25,31 @@ def _handle_invalid_file_id(file_id: str) -> dict[str, Any]:
         ),
         "file_id": file_id,
     }
+
+
+def _effective_depth(node_id: str, by_id: dict[str, dict[str, Any]]) -> int:
+    """Count non-SECTION ancestors (inclusive) by walking the parent_id chain.
+
+    Figma's SECTION nodes are organizational containers that don't add
+    meaningful depth when determining "top-level" frames.
+
+    In a standard hierarchy: DOCUMENT=1, CANVAS (page)=2, top-level FRAME=3.
+    Returns 0 if node_id is not found in by_id.
+    """
+    depth = 0
+    current_id: str | None = node_id
+    visited: set[str] = set()
+    while current_id is not None:
+        if current_id in visited:
+            break
+        visited.add(current_id)
+        node_info = by_id.get(current_id)
+        if node_info is None:
+            break
+        if node_info.get("type") != "SECTION":
+            depth += 1
+        current_id = node_info.get("parent_id")
+    return depth
 
 
 def _search_by_index(
@@ -105,11 +134,10 @@ def get_cached_figma_file(store: CacheStore, file_id: str) -> dict[str, Any]:
 
     # Return file metadata and main frame list
     frames: list[dict[str, Any]] = []
-    for node_id, node_info in index.get("by_id", {}).items():
+    by_id = index.get("by_id", {})
+    for node_id, node_info in by_id.items():
         if node_info.get("type") == "FRAME":
-            # Include frames up to depth 3 (Document > Page > Frame or shallower)
-            # This captures top-level frames and allows for edge cases
-            if len(node_info.get("path", [])) <= 3:
+            if _effective_depth(node_id, by_id) <= _TOP_LEVEL_FRAME_DEPTH:
                 frames.append(
                     {
                         "id": node_id,
@@ -297,14 +325,12 @@ def list_figma_frames(store: CacheStore, file_id: str) -> list[dict[str, Any]]:
 
     for node_id, node_info in by_id.items():
         if node_info.get("type") == "FRAME":
-            # Only page-level frames (short path)
-            path = node_info.get("path", [])
-            if len(path) == 3:  # Document > Page > Frame
+            if _effective_depth(node_id, by_id) == _TOP_LEVEL_FRAME_DEPTH:
                 results.append(
                     {
                         "id": node_id,
                         "name": node_info.get("name"),
-                        "path": path,
+                        "path": node_info.get("path", []),
                     }
                 )
 

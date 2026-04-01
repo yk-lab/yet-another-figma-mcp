@@ -15,6 +15,7 @@ from yet_another_figma_mcp.tools import (
     search_figma_frames_by_title,
     search_figma_nodes_by_name,
 )
+from yet_another_figma_mcp.tools.handlers import _effective_depth  # pyright: ignore[reportPrivateUsage]
 
 
 @pytest.fixture
@@ -77,6 +78,105 @@ def store_with_data(tmp_path: Path, sample_figma_file: dict[str, Any]) -> CacheS
     return CacheStore(tmp_path)
 
 
+@pytest.fixture
+def figma_file_with_sections() -> dict[str, Any]:
+    """SECTION ノードを含む Figma ファイルデータ"""
+    return {
+        "name": "Design with Sections",
+        "lastModified": "2024-06-01T00:00:00Z",
+        "version": "2",
+        "document": {
+            "id": "0:0",
+            "name": "Document",
+            "type": "DOCUMENT",
+            "children": [
+                {
+                    "id": "0:1",
+                    "name": "Page 1",
+                    "type": "CANVAS",
+                    "children": [
+                        {
+                            "id": "2:1",
+                            "name": "Auth Section",
+                            "type": "SECTION",
+                            "children": [
+                                {
+                                    "id": "2:2",
+                                    "name": "Login Screen",
+                                    "type": "FRAME",
+                                    "children": [],
+                                },
+                                {
+                                    "id": "2:3",
+                                    "name": "Sign Up Screen",
+                                    "type": "FRAME",
+                                    "children": [],
+                                },
+                            ],
+                        },
+                        {
+                            "id": "3:1",
+                            "name": "Outer Section",
+                            "type": "SECTION",
+                            "children": [
+                                {
+                                    "id": "3:2",
+                                    "name": "Inner Section",
+                                    "type": "SECTION",
+                                    "children": [
+                                        {
+                                            "id": "3:3",
+                                            "name": "Nested Frame",
+                                            "type": "FRAME",
+                                            "children": [],
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                        {
+                            "id": "4:1",
+                            "name": "Empty Section",
+                            "type": "SECTION",
+                            "children": [],
+                        },
+                        {
+                            "id": "5:1",
+                            "name": "Home Screen",
+                            "type": "FRAME",
+                            "children": [
+                                {
+                                    "id": "5:2",
+                                    "name": "Deep Child Frame",
+                                    "type": "FRAME",
+                                    "children": [],
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        },
+    }
+
+
+@pytest.fixture
+def store_with_sections(tmp_path: Path, figma_file_with_sections: dict[str, Any]) -> CacheStore:
+    """SECTION ノードを含むデータが入ったキャッシュストア"""
+    file_id = "sections123"
+    file_dir = tmp_path / file_id
+    file_dir.mkdir(parents=True)
+
+    with open(file_dir / "file_raw.json", "w") as f:
+        json.dump(figma_file_with_sections, f)
+
+    index = build_index(figma_file_with_sections)
+    with open(file_dir / "nodes_index.json", "w") as f:
+        json.dump(index, f)
+
+    return CacheStore(tmp_path)
+
+
 class TestGetCachedFigmaFile:
     def test_returns_file_metadata(self, store_with_data: CacheStore) -> None:
         result = get_cached_figma_file(store_with_data, "test123")
@@ -95,6 +195,18 @@ class TestGetCachedFigmaFile:
         result = get_cached_figma_file(store_with_data, "../invalid")
         assert result["error"] == "invalid_file_id"
         assert result["file_id"] == "../invalid"
+
+    def test_returns_frames_inside_sections(self, store_with_sections: CacheStore) -> None:
+        """SECTION 内・外のフレームを全てトップレベルフレームとして返す"""
+        result = get_cached_figma_file(store_with_sections, "sections123")
+        assert "error" not in result
+        frames = result["frames"]
+        assert len(frames) == 4
+        names = [f["name"] for f in frames]
+        assert "Login Screen" in names
+        assert "Sign Up Screen" in names
+        assert "Nested Frame" in names
+        assert "Home Screen" in names
 
     def test_returns_error_when_file_data_missing(
         self, tmp_path: Path, sample_figma_file: dict[str, Any]
@@ -304,3 +416,38 @@ class TestListFigmaFrames:
         names = [r["name"] for r in results]
         assert "Login Screen" in names
         assert "Sign Up Screen" in names
+
+    def test_lists_frames_inside_sections(self, store_with_sections: CacheStore) -> None:
+        """SECTION 内・外のフレームが混在してもリストされる"""
+        results = list_figma_frames(store_with_sections, "sections123")
+        assert len(results) == 4
+        names = [r["name"] for r in results]
+        assert "Login Screen" in names
+        assert "Sign Up Screen" in names
+        assert "Nested Frame" in names
+        assert "Home Screen" in names
+
+    def test_section_nodes_not_listed_as_frames(self, store_with_sections: CacheStore) -> None:
+        """SECTION ノード自体はフレーム一覧に含まれない"""
+        results = list_figma_frames(store_with_sections, "sections123")
+        names = [r["name"] for r in results]
+        assert "Auth Section" not in names
+        assert "Outer Section" not in names
+        assert "Inner Section" not in names
+        assert "Empty Section" not in names
+        assert "Deep Child Frame" not in names
+
+
+class TestEffectiveDepth:
+    def test_returns_zero_for_unknown_node(self) -> None:
+        """by_id に存在しない node_id は 0 を返す"""
+        assert _effective_depth("unknown", {}) == 0
+
+    def test_breaks_on_cycle(self) -> None:
+        """parent_id チェーンに循環があっても無限ループしない"""
+        by_id: dict[str, dict[str, Any]] = {
+            "A": {"type": "FRAME", "parent_id": "B"},
+            "B": {"type": "CANVAS", "parent_id": "A"},
+        }
+        result = _effective_depth("A", by_id)
+        assert result == 2
