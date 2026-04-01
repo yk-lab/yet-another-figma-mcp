@@ -1,5 +1,6 @@
 """simplify モジュールのテスト"""
 
+import math
 from typing import Any, cast
 
 from yet_another_figma_mcp.tools.simplify import simplify_node, truncate_children
@@ -336,7 +337,7 @@ class TestSimplifyNode:
             "opacity": 0.75,
         }
         result = _simplify(node)
-        assert result["opacity"] == 0.75
+        assert math.isclose(float(result["opacity"]), 0.75)
 
     def test_component_id(self) -> None:
         """コンポーネントIDが抽出される"""

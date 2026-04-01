@@ -3,6 +3,7 @@
 # pyright: reportPrivateUsage=false
 # ruff: noqa: S105, S106  # Test tokens are not real secrets
 
+import math
 import platform
 from collections.abc import Generator
 from unittest.mock import MagicMock, patch
@@ -79,10 +80,10 @@ class TestFigmaClientInit:
             retry_base_delay=2.0,
             retry_max_delay=60.0,
         )
-        assert client.timeout == 120.0
+        assert math.isclose(client.timeout, 120.0)
         assert client.max_retries == 5
-        assert client.retry_base_delay == 2.0
-        assert client.retry_max_delay == 60.0
+        assert math.isclose(client.retry_base_delay, 2.0)
+        assert math.isclose(client.retry_max_delay, 60.0)
         client.close()
 
     def test_init_sets_user_agent_header(self) -> None:
@@ -149,7 +150,7 @@ class TestFigmaClientRetryDelay:
         """Retry-After ヘッダーの尊重"""
         with FigmaClient(token="test-token") as client:  # nosec B106
             delay = client._calculate_retry_delay(0, retry_after=10)
-            assert delay == 10.0
+            assert math.isclose(delay, 10.0)
 
     def test_exponential_backoff(self) -> None:
         """指数バックオフの計算"""
@@ -171,7 +172,7 @@ class TestFigmaClientRetryDelay:
         with FigmaClient(token="test-token", retry_base_delay=10.0, retry_max_delay=15.0) as client:  # nosec B106
             # attempt=5: 10 * 2^5 = 320 → capped to 15
             delay = client._calculate_retry_delay(5)
-            assert delay == 15.0
+            assert math.isclose(delay, 15.0)
 
 
 class TestFigmaClientErrorHandling:
