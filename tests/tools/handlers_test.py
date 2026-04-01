@@ -305,34 +305,42 @@ class TestGetCachedFigmaNode:
 
 
 class TestSearchFigmaNodesByName:
-    def test_returns_empty_for_invalid_file_id(self, store_with_data: CacheStore) -> None:
-        """無効な file_id は空リストを返す"""
-        results = search_figma_nodes_by_name(store_with_data, "../invalid", "Button", "exact")
-        assert results == []
+    def test_returns_error_for_invalid_file_id(self, store_with_data: CacheStore) -> None:
+        """無効な file_id はエラーを返す"""
+        result = search_figma_nodes_by_name(store_with_data, "../invalid", "Button", "exact")
+        assert isinstance(result, dict)
+        assert result["error"] == "invalid_file_id"
+        assert result["file_id"] == "../invalid"
 
-    def test_returns_empty_for_missing_index(self, store_with_data: CacheStore) -> None:
-        """インデックスがない場合は空リストを返す"""
-        results = search_figma_nodes_by_name(store_with_data, "nonexistent", "Button", "exact")
-        assert results == []
+    def test_returns_error_for_missing_file(self, store_with_data: CacheStore) -> None:
+        """キャッシュにないファイルはエラーを返す"""
+        result = search_figma_nodes_by_name(store_with_data, "nonexistent", "Button", "exact")
+        assert isinstance(result, dict)
+        assert result["error"] == "file_not_found"
+        assert result["file_id"] == "nonexistent"
 
     def test_exact_match(self, store_with_data: CacheStore) -> None:
         results = search_figma_nodes_by_name(store_with_data, "test123", "Primary Button", "exact")
+        assert isinstance(results, list)
         assert len(results) == 1
         assert results[0]["name"] == "Primary Button"
 
     def test_partial_match(self, store_with_data: CacheStore) -> None:
         results = search_figma_nodes_by_name(store_with_data, "test123", "Button", "partial")
+        assert isinstance(results, list)
         assert len(results) >= 1
 
     def test_limit(self, store_with_data: CacheStore) -> None:
         results = search_figma_nodes_by_name(
             store_with_data, "test123", "Screen", "partial", limit=1
         )
+        assert isinstance(results, list)
         assert len(results) == 1
 
     def test_exact_match_case_sensitive_by_default(self, store_with_data: CacheStore) -> None:
         """exact モードはデフォルトで大文字小文字を区別する"""
         results = search_figma_nodes_by_name(store_with_data, "test123", "primary button", "exact")
+        assert isinstance(results, list)
         assert len(results) == 0
 
     def test_exact_match_ignore_case(self, store_with_data: CacheStore) -> None:
@@ -340,46 +348,56 @@ class TestSearchFigmaNodesByName:
         results = search_figma_nodes_by_name(
             store_with_data, "test123", "primary button", "exact", ignore_case=True
         )
+        assert isinstance(results, list)
         assert len(results) == 1
         assert results[0]["name"] == "Primary Button"
 
     def test_partial_match_always_case_insensitive(self, store_with_data: CacheStore) -> None:
         """partial モードは常に大文字小文字を無視する"""
         results = search_figma_nodes_by_name(store_with_data, "test123", "button", "partial")
+        assert isinstance(results, list)
         assert len(results) >= 1
         assert any(r["name"] == "Primary Button" for r in results)
 
 
 class TestSearchFigmaFramesByTitle:
-    def test_returns_empty_for_invalid_file_id(self, store_with_data: CacheStore) -> None:
-        """無効な file_id は空リストを返す"""
-        results = search_figma_frames_by_title(store_with_data, "../invalid", "Screen", "exact")
-        assert results == []
+    def test_returns_error_for_invalid_file_id(self, store_with_data: CacheStore) -> None:
+        """無効な file_id はエラーを返す"""
+        result = search_figma_frames_by_title(store_with_data, "../invalid", "Screen", "exact")
+        assert isinstance(result, dict)
+        assert result["error"] == "invalid_file_id"
+        assert result["file_id"] == "../invalid"
 
-    def test_returns_empty_for_missing_index(self, store_with_data: CacheStore) -> None:
-        """インデックスがない場合は空リストを返す"""
-        results = search_figma_frames_by_title(store_with_data, "nonexistent", "Screen", "exact")
-        assert results == []
+    def test_returns_error_for_missing_file(self, store_with_data: CacheStore) -> None:
+        """キャッシュにないファイルはエラーを返す"""
+        result = search_figma_frames_by_title(store_with_data, "nonexistent", "Screen", "exact")
+        assert isinstance(result, dict)
+        assert result["error"] == "file_not_found"
+        assert result["file_id"] == "nonexistent"
 
     def test_limit(self, store_with_data: CacheStore) -> None:
         """limit パラメータで取得件数を制限できる"""
         results = search_figma_frames_by_title(
             store_with_data, "test123", "Screen", "partial", limit=1
         )
+        assert isinstance(results, list)
         assert len(results) == 1
 
     def test_exact_match(self, store_with_data: CacheStore) -> None:
         results = search_figma_frames_by_title(store_with_data, "test123", "Login Screen", "exact")
+        assert isinstance(results, list)
         assert len(results) == 1
         assert results[0]["name"] == "Login Screen"
 
     def test_partial_match(self, store_with_data: CacheStore) -> None:
         results = search_figma_frames_by_title(store_with_data, "test123", "Screen", "partial")
+        assert isinstance(results, list)
         assert len(results) == 2  # Login Screen, Sign Up Screen
 
     def test_exact_match_case_sensitive_by_default(self, store_with_data: CacheStore) -> None:
         """exact モードはデフォルトで大文字小文字を区別する"""
         results = search_figma_frames_by_title(store_with_data, "test123", "login screen", "exact")
+        assert isinstance(results, list)
         assert len(results) == 0
 
     def test_exact_match_ignore_case(self, store_with_data: CacheStore) -> None:
@@ -387,12 +405,14 @@ class TestSearchFigmaFramesByTitle:
         results = search_figma_frames_by_title(
             store_with_data, "test123", "login screen", "exact", ignore_case=True
         )
+        assert isinstance(results, list)
         assert len(results) == 1
         assert results[0]["name"] == "Login Screen"
 
     def test_partial_match_always_case_insensitive(self, store_with_data: CacheStore) -> None:
         """partial モードは常に大文字小文字を無視する"""
         results = search_figma_frames_by_title(store_with_data, "test123", "screen", "partial")
+        assert isinstance(results, list)
         assert len(results) == 2
         names = [r["name"] for r in results]
         assert "Login Screen" in names
@@ -400,18 +420,23 @@ class TestSearchFigmaFramesByTitle:
 
 
 class TestListFigmaFrames:
-    def test_returns_empty_for_invalid_file_id(self, store_with_data: CacheStore) -> None:
-        """無効な file_id は空リストを返す"""
-        results = list_figma_frames(store_with_data, "../invalid")
-        assert results == []
+    def test_returns_error_for_invalid_file_id(self, store_with_data: CacheStore) -> None:
+        """無効な file_id はエラーを返す"""
+        result = list_figma_frames(store_with_data, "../invalid")
+        assert isinstance(result, dict)
+        assert result["error"] == "invalid_file_id"
+        assert result["file_id"] == "../invalid"
 
-    def test_returns_empty_for_missing_index(self, store_with_data: CacheStore) -> None:
-        """インデックスがない場合は空リストを返す"""
-        results = list_figma_frames(store_with_data, "nonexistent")
-        assert results == []
+    def test_returns_error_for_missing_file(self, store_with_data: CacheStore) -> None:
+        """キャッシュにないファイルはエラーを返す"""
+        result = list_figma_frames(store_with_data, "nonexistent")
+        assert isinstance(result, dict)
+        assert result["error"] == "file_not_found"
+        assert result["file_id"] == "nonexistent"
 
     def test_lists_top_frames(self, store_with_data: CacheStore) -> None:
         results = list_figma_frames(store_with_data, "test123")
+        assert isinstance(results, list)
         assert len(results) == 2
         names = [r["name"] for r in results]
         assert "Login Screen" in names
@@ -420,6 +445,7 @@ class TestListFigmaFrames:
     def test_lists_frames_inside_sections(self, store_with_sections: CacheStore) -> None:
         """SECTION 内・外のフレームが混在してもリストされる"""
         results = list_figma_frames(store_with_sections, "sections123")
+        assert isinstance(results, list)
         assert len(results) == 4
         names = [r["name"] for r in results]
         assert "Login Screen" in names
@@ -430,6 +456,7 @@ class TestListFigmaFrames:
     def test_section_nodes_not_listed_as_frames(self, store_with_sections: CacheStore) -> None:
         """SECTION ノード自体はフレーム一覧に含まれない"""
         results = list_figma_frames(store_with_sections, "sections123")
+        assert isinstance(results, list)
         names = [r["name"] for r in results]
         assert "Auth Section" not in names
         assert "Outer Section" not in names

@@ -277,6 +277,7 @@ class TestMCPServerToolCallsDirect:
         store = get_store()
         results = search_figma_nodes_by_name(store, file_id, name="Button", match_mode="partial")
 
+        assert isinstance(results, list)
         assert len(results) >= 3
 
     def test_search_figma_nodes_with_ignore_case_direct(
@@ -290,6 +291,7 @@ class TestMCPServerToolCallsDirect:
             store, file_id, name="button", match_mode="partial", ignore_case=True
         )
 
+        assert isinstance(results, list)
         assert len(results) >= 3
 
     def test_search_figma_frames_by_title_direct(self, server_with_cache: tuple[Any, str]) -> None:
@@ -299,6 +301,7 @@ class TestMCPServerToolCallsDirect:
         store = get_store()
         results = search_figma_frames_by_title(store, file_id, title="Login", match_mode="partial")
 
+        assert isinstance(results, list)
         frame_names = [f["name"] for f in results]
         assert "Login Screen" in frame_names
 
@@ -309,6 +312,7 @@ class TestMCPServerToolCallsDirect:
         store = get_store()
         results = list_figma_frames(store, file_id)
 
+        assert isinstance(results, list)
         frame_names = [f["name"] for f in results]
         assert "Buttons" in frame_names
         assert "Login Screen" in frame_names

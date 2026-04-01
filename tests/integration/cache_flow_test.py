@@ -78,6 +78,7 @@ class TestCacheFlowIntegration:
             store, file_id, name="Primary Button", match_mode="exact"
         )
 
+        assert isinstance(results, list)
         assert len(results) == 1
         assert results[0]["name"] == "Primary Button"
 
@@ -88,6 +89,7 @@ class TestCacheFlowIntegration:
         results = search_figma_nodes_by_name(store, file_id, name="Button", match_mode="partial")
 
         # Primary Button, Secondary Button, Icon Button, Submit Button, Menu Button, Profile Button
+        assert isinstance(results, list)
         assert len(results) >= 3
         for node in results:
             assert "Button" in node["name"]
@@ -102,6 +104,7 @@ class TestCacheFlowIntegration:
             store, file_id, name="button", match_mode="partial", ignore_case=True
         )
 
+        assert isinstance(results, list)
         assert len(results) >= 3
 
     def test_full_flow_search_by_name_multibyte(self, setup_cache: tuple[CacheStore, str]) -> None:
@@ -112,11 +115,13 @@ class TestCacheFlowIntegration:
         results = search_figma_nodes_by_name(
             store, file_id, name="プライマリボタン", match_mode="exact"
         )
+        assert isinstance(results, list)
         assert len(results) == 1
         assert results[0]["name"] == "プライマリボタン"
 
         # 日本語名の部分一致検索
         results = search_figma_nodes_by_name(store, file_id, name="ボタン", match_mode="partial")
+        assert isinstance(results, list)
         assert len(results) >= 2
         for node in results:
             assert "ボタン" in node["name"]
@@ -130,6 +135,7 @@ class TestCacheFlowIntegration:
         results = search_figma_frames_by_title(
             store, file_id, title="入力フィールド", match_mode="exact"
         )
+        assert isinstance(results, list)
         assert len(results) == 1
         assert results[0]["name"] == "入力フィールド"
 
@@ -139,6 +145,7 @@ class TestCacheFlowIntegration:
 
         results = search_figma_frames_by_title(store, file_id, title="Login", match_mode="partial")
 
+        assert isinstance(results, list)
         assert len(results) >= 1
         frame_names = [f["name"] for f in results]
         assert "Login Screen" in frame_names
@@ -149,6 +156,7 @@ class TestCacheFlowIntegration:
 
         results = list_figma_frames(store, file_id)
 
+        assert isinstance(results, list)
         frame_names = [f["name"] for f in results]
         # トップレベルフレームが含まれている
         assert "Buttons" in frame_names
@@ -162,6 +170,7 @@ class TestCacheFlowIntegration:
 
         # まずフレーム一覧を取得
         frames = list_figma_frames(store, file_id)
+        assert isinstance(frames, list)
         assert len(frames) > 0
 
         # Buttons フレームを見つける
@@ -233,6 +242,7 @@ class TestMultipleFilesIntegration:
             results = search_figma_nodes_by_name(
                 store, file_id, name="Button", match_mode="partial"
             )
+            assert isinstance(results, list)
             assert len(results) >= 3
 
     def test_nonexistent_file_returns_error(
@@ -295,6 +305,7 @@ class TestIndexConsistency:
 
         results = list_figma_frames(store, file_id)
 
+        assert isinstance(results, list)
         # 全結果が FRAME であることを確認
         for frame in results:
             # list_figma_frames は type を含まないので、ノードを直接取得して確認

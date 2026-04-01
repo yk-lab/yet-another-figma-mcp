@@ -27,6 +27,18 @@ def _handle_invalid_file_id(file_id: str) -> dict[str, Any]:
     }
 
 
+def _handle_file_not_found(file_id: str) -> dict[str, Any]:
+    """Generate error response for file not found in cache"""
+    return {
+        "error": "file_not_found",
+        "message": (
+            f"File '{file_id}' not found in cache. "
+            f"Run 'yet-another-figma-mcp cache -f {file_id}' to cache it first."
+        ),
+        "file_id": file_id,
+    }
+
+
 def _effective_depth(node_id: str, by_id: dict[str, dict[str, Any]]) -> int:
     """Count non-SECTION ancestors (inclusive) by walking the parent_id chain.
 
@@ -115,14 +127,7 @@ def get_cached_figma_file(store: CacheStore, file_id: str) -> dict[str, Any]:
 
     index = store.get_index(file_id)
     if not index:
-        return {
-            "error": "file_not_found",
-            "message": (
-                f"File '{file_id}' not found in cache. "
-                f"Run 'yet-another-figma-mcp cache -f {file_id}' to cache it first."
-            ),
-            "file_id": file_id,
-        }
+        return _handle_file_not_found(file_id)
 
     file_data = store.get_file(file_id)
     if not file_data:
@@ -186,14 +191,7 @@ def get_cached_figma_node(
 
     file_data = store.get_file(file_id)
     if not file_data:
-        return {
-            "error": "file_not_found",
-            "message": (
-                f"File '{file_id}' not found in cache. "
-                f"Run 'yet-another-figma-mcp cache -f {file_id}' to cache it first."
-            ),
-            "file_id": file_id,
-        }
+        return _handle_file_not_found(file_id)
 
     def find_node(node: dict[str, Any], target_id: str) -> dict[str, Any] | None:
         """Recursively search for a node by ID in the node tree"""
@@ -234,7 +232,7 @@ def search_figma_nodes_by_name(
     match_mode: Literal["exact", "partial"] = "exact",
     limit: int | None = None,
     ignore_case: bool = False,
-) -> list[dict[str, Any]]:
+) -> list[dict[str, Any]] | dict[str, Any]:
     """Search nodes by name
 
     Args:
@@ -247,16 +245,16 @@ def search_figma_nodes_by_name(
             Partial mode is always case-insensitive.
 
     Returns:
-        List of matching nodes
+        List of matching nodes. Contains 'error' field on error.
     """
     try:
         validate_file_id(file_id)
     except InvalidFileIdError:
-        return []
+        return _handle_invalid_file_id(file_id)
 
     index = store.get_index(file_id)
     if not index:
-        return []
+        return _handle_file_not_found(file_id)
 
     by_name = index.get("by_name", {})
     by_id = index.get("by_id", {})
@@ -275,7 +273,7 @@ def search_figma_frames_by_title(
     match_mode: Literal["exact", "partial"] = "exact",
     limit: int | None = None,
     ignore_case: bool = False,
-) -> list[dict[str, Any]]:
+) -> list[dict[str, Any]] | dict[str, Any]:
     """Search frame nodes by title
 
     Args:
@@ -288,16 +286,16 @@ def search_figma_frames_by_title(
             Partial mode is always case-insensitive.
 
     Returns:
-        List of matching frame nodes
+        List of matching frame nodes. Contains 'error' field on error.
     """
     try:
         validate_file_id(file_id)
     except InvalidFileIdError:
-        return []
+        return _handle_invalid_file_id(file_id)
 
     index = store.get_index(file_id)
     if not index:
-        return []
+        return _handle_file_not_found(file_id)
 
     by_frame_title = index.get("by_frame_title", {})
     by_id = index.get("by_id", {})
@@ -309,16 +307,20 @@ def search_figma_frames_by_title(
     return results
 
 
-def list_figma_frames(store: CacheStore, file_id: str) -> list[dict[str, Any]]:
-    """List top-level frames in the file"""
+def list_figma_frames(store: CacheStore, file_id: str) -> list[dict[str, Any]] | dict[str, Any]:
+    """List top-level frames in the file
+
+    Returns:
+        List of top-level frames. Contains 'error' field on error.
+    """
     try:
         validate_file_id(file_id)
     except InvalidFileIdError:
-        return []
+        return _handle_invalid_file_id(file_id)
 
     index = store.get_index(file_id)
     if not index:
-        return []
+        return _handle_file_not_found(file_id)
 
     results: list[dict[str, Any]] = []
     by_id = index.get("by_id", {})
