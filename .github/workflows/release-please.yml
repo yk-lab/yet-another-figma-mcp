@@ -2,13 +2,13 @@ name: Release Please
 on:
   push:
     branches: [main]
-permissions:
-  contents: write
-  pull-requests: write
-  id-token: write
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
@@ -21,6 +21,9 @@ jobs:
     needs: release-please
     if: ${{ needs.release-please.outputs.release_created }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -39,6 +42,9 @@ jobs:
   publish-testpypi:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write
     environment:
       name: testpypi
       url: https://test.pypi.org/project/yet-another-figma-mcp/
@@ -55,6 +61,9 @@ jobs:
   publish-pypi:
     needs: publish-testpypi
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write
     environment:
       name: pypi
       url: https://pypi.org/project/yet-another-figma-mcp/
