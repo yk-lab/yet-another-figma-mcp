@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.1](https://github.com/yk-lab/yet-another-figma-mcp/compare/v0.2.0...v0.2.1) (2026-04-04)
+
+
+### Bug Fixes
+
+* **test:** 浮動小数点の等値比較をmath.iscloseに置換 ([#97](https://github.com/yk-lab/yet-another-figma-mcp/issues/97)) ([5b3683d](https://github.com/yk-lab/yet-another-figma-mcp/commit/5b3683dc3e6e013e142cc22a21fb070c5b90c7bb))
+* **tools:** SECTIONノード内のフレームがフレーム一覧に表示されない問題を修正 ([#88](https://github.com/yk-lab/yet-another-figma-mcp/issues/88)) ([ec6ca5a](https://github.com/yk-lab/yet-another-figma-mcp/commit/ec6ca5a6241b4c80ab58efc89eb1203b61c8ced8))
+* **tools:** 検索・一覧ツールが無効なfile_idでエラー辞書を返すように統一 ([#98](https://github.com/yk-lab/yet-another-figma-mcp/issues/98)) ([2b032a8](https://github.com/yk-lab/yet-another-figma-mcp/commit/2b032a8b285c845370dadc2e58e68d60f260858e)), closes [#90](https://github.com/yk-lab/yet-another-figma-mcp/issues/90)
+
 ## [0.2.0](https://github.com/yk-lab/yet-another-figma-mcp/compare/v0.1.3...v0.2.0) (2026-01-15)
 
 
